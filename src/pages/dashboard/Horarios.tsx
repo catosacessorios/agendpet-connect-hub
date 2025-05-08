@@ -101,11 +101,15 @@ const Horarios = () => {
         return;
       }
 
+      console.log("Salvando horário:", slotData);
       const { error } = await supabase
         .from("available_slots")
         .insert([slotData]);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Erro na inserção:", error);
+        throw error;
+      }
       
       toast.success("Horário adicionado com sucesso!");
       
