@@ -1,91 +1,92 @@
 
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { toast } from "sonner";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const { signIn, loading } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulando um login bem-sucedido (temporário até integrar com Supabase)
-    setTimeout(() => {
-      console.log("Login com:", email, password);
-      toast.success("Login realizado com sucesso!");
-      setIsLoading(false);
-      
-      // Por enquanto vamos simular um login bem-sucedido
-      localStorage.setItem("user", JSON.stringify({ email, name: "Usuário" }));
-      navigate("/");
-    }, 1000);
+    await signIn(email, password);
   };
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Entrar no AgendPet</CardTitle>
-            <CardDescription className="text-center">
-              Digite suas credenciais para acessar sua conta
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
+      
+      <div className="flex-grow flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-800">Entrar no AgendPet</h1>
+            <p className="mt-2 text-gray-600">
+              Gerencie seu petshop de maneira eficiente
+            </p>
+          </div>
+
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div>
                 <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="seupetshop@exemplo.com" 
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
-              <div className="space-y-2">
+              
+              <div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Senha</Label>
-                  <Link to="/esqueci-senha" className="text-sm text-primary-500 hover:text-primary-600">
+                  <a
+                    href="#"
+                    className="text-sm font-medium text-primary hover:underline"
+                  >
                     Esqueceu a senha?
-                  </Link>
+                  </a>
                 </div>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  placeholder="********" 
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Entrando..." : "Entrar"}
-              </Button>
-              <div className="text-center text-sm">
-                Ainda não tem uma conta?{" "}
-                <Link to="/cadastro" className="text-primary-500 hover:text-primary-600 font-medium">
-                  Cadastre-se
-                </Link>
-              </div>
-            </CardFooter>
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading}
+            >
+              {loading ? "Entrando..." : "Entrar"}
+            </Button>
+            
+            <div className="text-center text-sm">
+              <span className="text-gray-600">Não tem uma conta? </span>
+              <Link
+                to="/cadastro"
+                className="font-medium text-primary hover:underline"
+              >
+                Cadastre-se
+              </Link>
+            </div>
           </form>
-        </Card>
+        </div>
       </div>
+      
       <Footer />
     </div>
   );

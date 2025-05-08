@@ -1,138 +1,127 @@
 
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { toast } from "sonner";
 
 const Cadastro = () => {
-  const [formData, setFormData] = useState({
-    nomePetshop: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [petshopName, setPetshopName] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const { signUp, loading } = useAuth();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
+    setError("");
     
-    // Validar se as senhas são iguais
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("As senhas não conferem!");
-      setIsLoading(false);
+    if (password !== confirmPassword) {
+      setError("As senhas não coincidem");
       return;
     }
     
-    // Simulando um cadastro (aqui você integraria com Supabase)
-    setTimeout(() => {
-      console.log("Cadastro:", formData);
-      toast.success("Cadastro realizado com sucesso!");
-      setIsLoading(false);
-      
-      // Simular login após cadastro
-      localStorage.setItem("user", JSON.stringify({ email: formData.email, name: formData.nomePetshop }));
-      navigate("/");
-    }, 1000);
+    if (password.length < 6) {
+      setError("A senha deve ter pelo menos 6 caracteres");
+      return;
+    }
+    
+    await signUp(email, password, petshopName);
   };
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <Card className="w-full max-w-md">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Crie sua conta</CardTitle>
-            <CardDescription className="text-center">
-              Comece a usar o AgendPet gratuitamente
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="nomePetshop">Nome do Petshop</Label>
-                <Input 
-                  id="nomePetshop" 
-                  name="nomePetshop"
-                  placeholder="Petshop Exemplo" 
-                  value={formData.nomePetshop}
-                  onChange={handleChange}
+      
+      <div className="flex-grow flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-800">Cadastre seu Petshop</h1>
+            <p className="mt-2 text-gray-600">
+              Comece a gerenciar seus agendamentos hoje mesmo
+            </p>
+          </div>
+
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="petshopName">Nome do Petshop</Label>
+                <Input
+                  id="petshopName"
+                  type="text"
+                  placeholder="PetShop do Rex"
+                  value={petshopName}
+                  onChange={(e) => setPetshopName(e.target.value)}
                   required
                 />
               </div>
-              <div className="space-y-2">
+
+              <div>
                 <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  name="email"
-                  type="email" 
-                  placeholder="seupetshop@exemplo.com" 
-                  value={formData.email}
-                  onChange={handleChange}
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
-              <div className="space-y-2">
+              
+              <div>
                 <Label htmlFor="password">Senha</Label>
-                <Input 
-                  id="password" 
-                  name="password"
-                  type="password" 
-                  placeholder="********" 
-                  value={formData.password}
-                  onChange={handleChange}
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
-              <div className="space-y-2">
+              
+              <div>
                 <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                <Input 
-                  id="confirmPassword" 
-                  name="confirmPassword"
-                  type="password" 
-                  placeholder="********" 
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                 />
               </div>
-              <p className="text-xs text-gray-500">
-                Ao se cadastrar, você concorda com nossos{" "}
-                <Link to="/termos" className="text-primary-500 hover:underline">
-                  Termos de Serviço
-                </Link>{" "}
-                e{" "}
-                <Link to="/privacidade" className="text-primary-500 hover:underline">
-                  Política de Privacidade
-                </Link>
-                .
-              </p>
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Criando conta..." : "Criar conta"}
-              </Button>
-              <div className="text-center text-sm">
-                Já tem uma conta?{" "}
-                <Link to="/login" className="text-primary-500 hover:text-primary-600 font-medium">
-                  Faça login
-                </Link>
-              </div>
-            </CardFooter>
+              
+              {error && (
+                <div className="text-sm text-red-500">{error}</div>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading}
+            >
+              {loading ? "Criando conta..." : "Cadastrar"}
+            </Button>
+            
+            <div className="text-center text-sm">
+              <span className="text-gray-600">Já tem uma conta? </span>
+              <Link
+                to="/login"
+                className="font-medium text-primary hover:underline"
+              >
+                Entre aqui
+              </Link>
+            </div>
           </form>
-        </Card>
+        </div>
       </div>
+      
       <Footer />
     </div>
   );
