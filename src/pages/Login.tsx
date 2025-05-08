@@ -1,26 +1,33 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { toast } from "sonner";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulando um login (aqui você integraria com Supabase)
+    // Simulando um login bem-sucedido (temporário até integrar com Supabase)
     setTimeout(() => {
       console.log("Login com:", email, password);
+      toast.success("Login realizado com sucesso!");
       setIsLoading(false);
+      
+      // Por enquanto vamos simular um login bem-sucedido
+      localStorage.setItem("user", JSON.stringify({ email, name: "Usuário" }));
+      navigate("/");
     }, 1000);
   };
 

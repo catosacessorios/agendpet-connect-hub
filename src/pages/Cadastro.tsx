@@ -1,12 +1,13 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { toast } from "sonner";
 
 const Cadastro = () => {
   const [formData, setFormData] = useState({
@@ -16,6 +17,7 @@ const Cadastro = () => {
     confirmPassword: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -26,10 +28,22 @@ const Cadastro = () => {
     e.preventDefault();
     setIsLoading(true);
     
+    // Validar se as senhas são iguais
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("As senhas não conferem!");
+      setIsLoading(false);
+      return;
+    }
+    
     // Simulando um cadastro (aqui você integraria com Supabase)
     setTimeout(() => {
       console.log("Cadastro:", formData);
+      toast.success("Cadastro realizado com sucesso!");
       setIsLoading(false);
+      
+      // Simular login após cadastro
+      localStorage.setItem("user", JSON.stringify({ email: formData.email, name: formData.nomePetshop }));
+      navigate("/");
     }, 1000);
   };
 
