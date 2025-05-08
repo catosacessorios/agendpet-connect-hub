@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { CalendarDays, Users, Clock, Scissors, Settings, LogOut, Menu, X, Home } from "lucide-react";
@@ -7,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type DashboardLayoutProps = {
   children: React.ReactNode;
@@ -17,7 +16,7 @@ type DashboardLayoutProps = {
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) => {
   const { petshopProfile, signOut } = useAuth();
   const navigate = useNavigate();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -132,7 +131,7 @@ type SidebarProps = {
 };
 
 const Sidebar: React.FC<SidebarProps> = ({ navItems, petshopProfile, handleLogout, setMenuOpen }) => {
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   
   const closeMenu = () => {
     if (isMobile) {
