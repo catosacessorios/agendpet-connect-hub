@@ -4,140 +4,129 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { toast } from "sonner";
-import { Eye, EyeOff } from "lucide-react";
-import PasswordInput from "@/components/PasswordInput";
 
 const Cadastro = () => {
   const navigate = useNavigate();
-  const { signUp, user } = useAuth();
+  const { signUp } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [petshopName, setPetshopName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  // Redirect if already logged in
-  if (user) {
-    navigate("/dashboard");
-    return null;
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email || !password || !confirmPassword || !petshopName) {
-      toast.error("Preencha todos os campos");
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      toast.error("As senhas não correspondem");
-      return;
-    }
-    
+    setLoading(true);
+
     try {
-      setLoading(true);
-      const { error } = await signUp(email, password, petshopName);
-      
-      if (error) {
-        throw error;
+      // Check required fields
+      if (!email || !password || !petshopName) {
+        toast.error("Preencha todos os campos");
+        setLoading(false);
+        return;
       }
-      
-      toast.success("Cadastro realizado com sucesso! Verifique seu email para confirmar a conta.");
+
+      await signUp(email, password, petshopName);
+      toast.success("Conta criada com sucesso! Faça login para continuar.");
       navigate("/login");
     } catch (error: any) {
-      console.error("Error during signup:", error);
-      toast.error(error.message || "Falha ao criar conta. Tente novamente.");
+      console.error("Error creating account:", error);
+      toast.error(error.message || "Erro ao criar conta");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-6">
+        <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-primary">AgendPet</h1>
-          <p className="text-gray-600 mt-2">Crie sua conta e gerencie seu petshop</p>
+          <p className="text-gray-600 mt-2">Crie sua conta</p>
         </div>
-        
+
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl">Cadastrar</CardTitle>
-            <CardDescription>Crie sua conta para começar a usar o AgendPet</CardDescription>
+            <CardTitle>Cadastro</CardTitle>
+            <CardDescription>
+              Preencha os dados para criar sua conta
+            </CardDescription>
           </CardHeader>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSignUp}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="petshop-name">Nome do Petshop</label>
+                <Label htmlFor="petshopName">Nome do Pet Shop</Label>
                 <Input
-                  id="petshop-name"
-                  type="text"
-                  placeholder="Petshop Exemplo"
+                  id="petshopName"
                   value={petshopName}
                   onChange={(e) => setPetshopName(e.target.value)}
+                  placeholder="Pet Shop Exemplo"
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="email">Email</label>
+                <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="seu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="password">Senha</label>
-                <PasswordInput
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="confirm-password">Confirmar Senha</label>
-                <PasswordInput
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirme sua senha"
-                  required
-                />
+                <Label htmlFor="password">Senha</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="********"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOffIcon className="h-4 w-4" />
+                    ) : (
+                      <EyeIcon className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </CardContent>
-            
-            <CardFooter className="flex flex-col space-y-4">
-              <Button 
-                type="submit" 
-                className="w-full" 
+
+            <CardFooter className="flex flex-col">
+              <Button
+                className="w-full"
+                type="submit"
                 disabled={loading}
               >
                 {loading ? "Cadastrando..." : "Cadastrar"}
               </Button>
-              
-              <div className="text-center text-sm">
-                Já tem uma conta?{" "}
+
+              <p className="mt-4 text-center text-sm text-gray-600">
+                Já possui uma conta?{" "}
                 <Link to="/login" className="text-primary hover:underline">
                   Faça login
                 </Link>
-              </div>
+              </p>
             </CardFooter>
           </form>
         </Card>
-        
-        <div className="mt-4 text-center">
-          <Link to="/" className="text-gray-600 hover:text-gray-800 text-sm">
-            Voltar para a página inicial
-          </Link>
-        </div>
       </div>
     </div>
   );

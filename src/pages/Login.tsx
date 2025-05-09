@@ -1,113 +1,119 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { toast } from "sonner";
-import PasswordInput from "@/components/PasswordInput";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { signIn, user } = useAuth();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  // Redirect if already logged in
-  if (user) {
-    navigate("/dashboard");
-    return null;
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email || !password) {
-      toast.error("Preencha todos os campos");
-      return;
-    }
-    
+    setLoading(true);
+
     try {
-      setLoading(true);
-      const { error } = await signIn(email, password);
-      
-      if (error) {
-        throw error;
+      // Check required fields
+      if (!email || !password) {
+        toast.error("Preencha todos os campos");
+        setLoading(false);
+        return;
       }
-      
-      toast.success("Login realizado com sucesso!");
-      navigate("/dashboard");
+
+      await signIn(email, password);
+      // The navigate is handled inside signIn function
     } catch (error: any) {
-      console.error("Error during login:", error);
-      toast.error(error.message || "Falha ao fazer login. Verifique suas credenciais.");
+      console.error("Error logging in:", error);
+      toast.error(error.message || "Erro ao fazer login");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-6">
+        <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-primary">AgendPet</h1>
-          <p className="text-gray-600 mt-2">Gerencie seu petshop com facilidade</p>
+          <p className="text-gray-600 mt-2">Acesse sua conta</p>
         </div>
-        
+
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl">Entrar</CardTitle>
-            <CardDescription>Acesse sua conta para gerenciar seu petshop</CardDescription>
+            <CardTitle>Login</CardTitle>
+            <CardDescription>
+              Entre com seus dados para acessar o sistema
+            </CardDescription>
           </CardHeader>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleLogin}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="email">Email</label>
+                <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="seu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="password">Senha</label>
-                <PasswordInput
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <Label htmlFor="password">Senha</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="********"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOffIcon className="h-4 w-4" />
+                    ) : (
+                      <EyeIcon className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </CardContent>
-            
-            <CardFooter className="flex flex-col space-y-4">
-              <Button 
-                type="submit" 
-                className="w-full" 
+
+            <CardFooter className="flex flex-col">
+              <Button
+                className="w-full"
+                type="submit"
                 disabled={loading}
               >
                 {loading ? "Entrando..." : "Entrar"}
               </Button>
-              
-              <div className="text-center text-sm">
+
+              <p className="mt-4 text-center text-sm text-gray-600">
                 Não tem uma conta?{" "}
                 <Link to="/cadastro" className="text-primary hover:underline">
                   Cadastre-se
                 </Link>
-              </div>
+              </p>
             </CardFooter>
           </form>
         </Card>
-        
-        <div className="mt-4 text-center">
-          <Link to="/" className="text-gray-600 hover:text-gray-800 text-sm">
-            Voltar para a página inicial
-          </Link>
-        </div>
       </div>
     </div>
   );
