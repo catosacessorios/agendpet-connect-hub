@@ -9,27 +9,33 @@ import { PetsList } from "./PetsList";
 
 type ClientCardProps = {
   client: Client;
-  pets: Pet[];
+  pets?: Pet[];
   onEdit: () => void;
   onDelete: () => void;
-  onAddPet: () => void;
-  onDeletePet: (petId: string, petName: string) => void;
+  onAddPet?: () => void;
+  onDeletePet?: (petId: string, petName: string) => void;
+  onSelect?: () => void;
 };
 
 export const ClientCard: React.FC<ClientCardProps> = ({
   client,
-  pets,
+  pets = [],
   onEdit,
   onDelete,
   onAddPet,
-  onDeletePet
+  onDeletePet = () => {},
+  onSelect
 }) => {
   return (
-    <Card key={client.id} className="overflow-hidden">
+    <Card 
+      key={client.id} 
+      className={`overflow-hidden ${onSelect ? 'cursor-pointer' : ''}`}
+      onClick={onSelect}
+    >
       <CardHeader className="bg-gray-50 py-4">
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg">{client.name}</CardTitle>
-          <div className="flex space-x-2">
+          <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
             <Button 
               variant="ghost" 
               size="icon"
@@ -60,31 +66,35 @@ export const ClientCard: React.FC<ClientCardProps> = ({
           </div>
         </div>
 
-        <Tabs defaultValue="pets">
-          <TabsList className="mb-4">
-            <TabsTrigger value="pets">Pets</TabsTrigger>
-            <TabsTrigger value="appointments">Agendamentos</TabsTrigger>
-          </TabsList>
-          <TabsContent value="pets">
-            <PetsList 
-              pets={pets} 
-              onDeletePet={onDeletePet} 
-            />
-            <div className="mt-4">
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={onAddPet}
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Adicionar Pet
-              </Button>
-            </div>
-          </TabsContent>
-          <TabsContent value="appointments">
-            <p className="text-center py-4 text-gray-500">Histórico de agendamentos em breve</p>
-          </TabsContent>
-        </Tabs>
+        {pets && pets.length > 0 && onDeletePet && (
+          <Tabs defaultValue="pets">
+            <TabsList className="mb-4">
+              <TabsTrigger value="pets">Pets</TabsTrigger>
+              <TabsTrigger value="appointments">Agendamentos</TabsTrigger>
+            </TabsList>
+            <TabsContent value="pets" onClick={(e) => e.stopPropagation()}>
+              <PetsList 
+                pets={pets} 
+                onDeletePet={onDeletePet}
+              />
+              {onAddPet && (
+                <div className="mt-4">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={onAddPet}
+                  >
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Adicionar Pet
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
+            <TabsContent value="appointments">
+              <p className="text-center py-4 text-gray-500">Histórico de agendamentos em breve</p>
+            </TabsContent>
+          </Tabs>
+        )}
       </CardContent>
     </Card>
   );

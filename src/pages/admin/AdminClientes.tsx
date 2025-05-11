@@ -174,7 +174,7 @@ const AdminClientes = () => {
               <PetsList
                 pets={pets[selectedClient.id] || []}
                 onEdit={(pet) => handleAddPet(pet)}
-                onDelete={(pet) => handleOpenDeleteDialog('pet', pet)}
+                onDeletePet={(petId, petName) => handleOpenDeleteDialog('pet', { id: petId, nome: petName })}
               />
             </div>
           </DialogContent>
@@ -194,6 +194,7 @@ const AdminClientes = () => {
         isOpen={isPetFormOpen}
         onClose={handleClosePetForm}
         onSave={handleSavePet}
+        client={currentClient}
         initialData={currentPet}
       />
 

@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Client } from "@/hooks/use-clients";
+import type { Client, Pet } from "@/hooks/use-clients";
 
 type PetFormProps = {
   isOpen: boolean;
@@ -18,13 +18,15 @@ type PetFormProps = {
     notes: string;
   }) => Promise<boolean>;
   client: Client | null;
+  initialData?: Pet | null;
 };
 
 export const PetForm: React.FC<PetFormProps> = ({
   isOpen,
   onClose,
   onSave,
-  client
+  client,
+  initialData
 }) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -37,17 +39,28 @@ export const PetForm: React.FC<PetFormProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      // Reset form when dialog opens
-      setFormData({
-        name: "",
-        species: "dog",
-        breed: "",
-        age: "",
-        weight: "",
-        notes: ""
-      });
+      if (initialData) {
+        setFormData({
+          name: initialData.name,
+          species: initialData.species,
+          breed: initialData.breed || "",
+          age: initialData.age ? initialData.age.toString() : "",
+          weight: initialData.weight ? initialData.weight.toString() : "",
+          notes: initialData.notes || ""
+        });
+      } else {
+        // Reset form when dialog opens
+        setFormData({
+          name: "",
+          species: "dog",
+          breed: "",
+          age: "",
+          weight: "",
+          notes: ""
+        });
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, initialData]);
 
   const handleSave = async () => {
     const success = await onSave(formData);
@@ -61,7 +74,7 @@ export const PetForm: React.FC<PetFormProps> = ({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            Adicionar Pet para {client?.name}
+            {initialData ? "Editar Pet" : `Adicionar Pet para ${client?.name || ""}`}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
