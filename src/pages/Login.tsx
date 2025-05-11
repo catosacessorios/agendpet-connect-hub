@@ -4,9 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { toast } from "sonner";
 import PasswordInput from "@/components/PasswordInput";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -93,9 +91,9 @@ const Login = () => {
                       <FormLabel>Senha</FormLabel>
                       <FormControl>
                         <PasswordInput 
+                          placeholder="********"
                           value={field.value}
                           onChange={field.onChange}
-                          placeholder="********"
                         />
                       </FormControl>
                       <FormMessage />
