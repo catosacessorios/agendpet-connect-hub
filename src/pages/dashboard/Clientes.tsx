@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -9,8 +9,12 @@ import { PetForm } from "@/components/clients/PetForm";
 import { DeleteDialog } from "@/components/clients/DeleteDialog";
 import { ClientCard } from "@/components/clients/ClientCard";
 import { SearchBar } from "@/components/clients/SearchBar";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Clientes = () => {
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const { 
     clients, 
     pets, 
@@ -21,6 +25,22 @@ const Clientes = () => {
     savePet, 
     deleteItem 
   } = useClients();
+  
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/login");
+    }
+  }, [user, authLoading, navigate]);
+
+  if (authLoading) {
+    return <div className="flex items-center justify-center h-screen">
+      <p className="text-lg">Carregando...</p>
+    </div>;
+  }
+
+  if (!user) {
+    return null; // Will be redirected by the useEffect
+  }
   
   // Client Dialog
   const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);

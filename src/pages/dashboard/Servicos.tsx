@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -8,8 +8,11 @@ import { Search, Calendar } from "lucide-react";
 import { useServices } from "@/hooks/use-services";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Servicos = () => {
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const { 
     filteredServices, 
     loading, 
@@ -17,7 +20,21 @@ const Servicos = () => {
     setSearchQuery
   } = useServices();
   
-  const navigate = useNavigate();
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/login");
+    }
+  }, [user, authLoading, navigate]);
+
+  if (authLoading) {
+    return <div className="flex items-center justify-center h-screen">
+      <p className="text-lg">Carregando...</p>
+    </div>;
+  }
+
+  if (!user) {
+    return null; // Will be redirected by the useEffect
+  }
 
   const handleAgendarServico = (serviceId: string) => {
     navigate(`/dashboard/agendamentos/novo?service=${serviceId}`);

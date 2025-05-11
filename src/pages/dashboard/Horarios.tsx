@@ -1,9 +1,11 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PlusCircle, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 import TimeSlotCard from "@/components/horarios/TimeSlotCard";
 import AddTimeSlotDialog from "@/components/horarios/AddTimeSlotDialog";
@@ -11,6 +13,8 @@ import { useTimeSlots } from "@/hooks/use-time-slots";
 
 const Horarios = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const {
     loading,
     groupedSlots,
@@ -20,6 +24,22 @@ const Horarios = () => {
     deleteSlot,
     getDayName,
   } = useTimeSlots();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/login");
+    }
+  }, [user, authLoading, navigate]);
+
+  if (authLoading) {
+    return <div className="flex items-center justify-center h-screen">
+      <p className="text-lg">Carregando...</p>
+    </div>;
+  }
+
+  if (!user) {
+    return null; // Will be redirected by the useEffect
+  }
 
   const openCreateDialog = () => {
     setIsDialogOpen(true);

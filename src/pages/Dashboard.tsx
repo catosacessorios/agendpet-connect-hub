@@ -1,8 +1,9 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays, Clock, DollarSign, Users } from "lucide-react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 import StatsCard from "@/components/dashboard/StatsCard";
 import RecentAppointments from "@/components/dashboard/RecentAppointments";
@@ -10,7 +11,8 @@ import QuickActions from "@/components/dashboard/QuickActions";
 import { useDashboard } from "@/hooks/use-dashboard";
 
 const Dashboard = () => {
-  const { petshopProfile } = useAuth();
+  const { user, petshopProfile, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const { 
     stats, 
     recentAppointments, 
@@ -19,6 +21,22 @@ const Dashboard = () => {
     formatTime, 
     formatCurrency 
   } = useDashboard();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/login");
+    }
+  }, [user, authLoading, navigate]);
+
+  if (authLoading) {
+    return <div className="flex items-center justify-center h-screen">
+      <p className="text-lg">Carregando...</p>
+    </div>;
+  }
+
+  if (!user) {
+    return null; // Will be redirected by the useEffect
+  }
 
   return (
     <DashboardLayout title={`Bem-vindo, ${petshopProfile?.name || 'Carregando...'}`}>
