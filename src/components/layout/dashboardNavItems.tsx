@@ -1,5 +1,5 @@
 
-import { CalendarDays, Users, Clock, Scissors, Settings, Home } from "lucide-react";
+import { CalendarDays, Users, Shopping, Scissors, Settings, Home } from "lucide-react";
 
 export const dashboardNavItems = [
   { 
@@ -13,17 +13,12 @@ export const dashboardNavItems = [
     href: "/dashboard/agendamentos" 
   },
   { 
-    label: "Serviços", 
+    label: "Serviços Disponíveis", 
     icon: <Scissors size={20} />, 
     href: "/dashboard/servicos" 
   },
   { 
-    label: "Horários", 
-    icon: <Clock size={20} />, 
-    href: "/dashboard/horarios" 
-  },
-  { 
-    label: "Clientes", 
+    label: "Meus Pets", 
     icon: <Users size={20} />, 
     href: "/dashboard/clientes" 
   },

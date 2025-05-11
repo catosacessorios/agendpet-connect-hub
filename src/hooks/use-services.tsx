@@ -68,7 +68,7 @@ export const useServices = () => {
     try {
       const { error } = await supabase
         .from("services")
-        .insert([serviceData]);
+        .insert(serviceData);
       
       if (error) throw error;
       

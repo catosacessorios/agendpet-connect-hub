@@ -2,122 +2,97 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/contexts/AuthContext";
-import { PlusCircle } from "lucide-react";
-import { ServiceList } from "@/components/services/ServiceList";
-import { ServiceFormDialog, DeleteServiceDialog } from "@/components/services/ServiceDialogs";
-import { useServices, Service } from "@/hooks/use-services";
-import type { ServiceFormData } from "@/components/services/ServiceForm";
+import { Search, Calendar } from "lucide-react";
+import { useServices } from "@/hooks/use-services";
+import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 const Servicos = () => {
-  const { petshopProfile } = useAuth();
   const { 
     filteredServices, 
     loading, 
     searchQuery, 
-    setSearchQuery,
-    createService,
-    updateService,
-    deleteService
+    setSearchQuery
   } = useServices();
   
-  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentService, setCurrentService] = useState<Service | null>(null);
+  const navigate = useNavigate();
 
-  const openCreateDialog = () => {
-    setCurrentService(null);
-    setIsFormDialogOpen(true);
+  const handleAgendarServico = (serviceId: string) => {
+    navigate(`/dashboard/agendamentos/novo?service=${serviceId}`);
   };
 
-  const openEditDialog = (service: Service) => {
-    setCurrentService(service);
-    setIsFormDialogOpen(true);
-  };
-
-  const openDeleteDialog = (service: Service) => {
-    setCurrentService(service);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleSaveService = async (formData: ServiceFormData) => {
-    if (!petshopProfile?.id) return false;
-
-    const serviceData = {
-      name: formData.name,
-      description: formData.description || null,
-      price: parseFloat(formData.price),
-      duration: parseInt(formData.duration),
-      active: formData.active,
-      petshop_id: petshopProfile.id
-    };
-
-    if (currentService) {
-      return updateService(currentService.id, serviceData);
-    } else {
-      return createService(serviceData);
-    }
-  };
-
-  const handleDeleteService = async () => {
-    if (!currentService) return;
-    
-    await deleteService(currentService.id);
-    setIsDeleteDialogOpen(false);
+  const formatCurrency = (price: number) => {
+    return price.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
   };
 
   return (
-    <DashboardLayout title="Serviços">
+    <DashboardLayout title="Serviços Disponíveis">
       <Card className="mb-6">
         <CardContent className="py-4">
-          <div className="flex flex-wrap gap-4 justify-between">
-            <div className="flex-1 min-w-[200px]">
-              <Input
-                type="search"
-                placeholder="Buscar serviços"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Button onClick={openCreateDialog}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Novo Serviço
-            </Button>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+            <Input
+              type="search"
+              placeholder="Buscar serviços"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {filteredServices.length} serviços encontrados
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ServiceList 
-            services={filteredServices}
-            isLoading={loading}
-            onEdit={openEditDialog}
-            onDelete={openDeleteDialog}
-          />
-        </CardContent>
-      </Card>
-
-      <ServiceFormDialog 
-        isOpen={isFormDialogOpen}
-        onClose={() => setIsFormDialogOpen(false)}
-        onSave={handleSaveService}
-        currentService={currentService}
-      />
-
-      <DeleteServiceDialog 
-        isOpen={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={handleDeleteService}
-        serviceName={currentService?.name || null}
-      />
+      {loading ? (
+        <div className="text-center py-8">
+          <p>Carregando serviços disponíveis...</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredServices
+            .filter(service => service.active)
+            .map(service => (
+              <Card key={service.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle>{service.name}</CardTitle>
+                      {service.description && (
+                        <CardDescription className="mt-2">{service.description}</CardDescription>
+                      )}
+                    </div>
+                    <Badge>{formatCurrency(service.price)}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-sm text-gray-500">
+                    <p>Duração: {service.duration} minutos</p>
+                  </div>
+                </CardContent>
+                <CardFooter className="bg-gray-50 border-t">
+                  <Button 
+                    className="w-full" 
+                    variant="default"
+                    onClick={() => handleAgendarServico(service.id)}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Agendar Serviço
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+            
+          {filteredServices.filter(service => service.active).length === 0 && (
+            <div className="col-span-full text-center py-8">
+              <p className="text-gray-500">Nenhum serviço disponível encontrado</p>
+            </div>
+          )}
+        </div>
+      )}
     </DashboardLayout>
   );
 };

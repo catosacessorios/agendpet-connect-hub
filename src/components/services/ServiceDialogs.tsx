@@ -2,50 +2,56 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ServiceForm } from "./ServiceForm";
-import { Button } from "@/components/ui/button";
 import type { Service } from "@/hooks/use-services";
+import type { ServiceFormData } from "./ServiceForm";
 
-// Create/Edit Service Dialog
-type ServiceFormDialogProps = {
+interface ServiceFormDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (formData: any) => Promise<boolean>;
+  onSave: (formData: ServiceFormData) => Promise<boolean>;
   currentService: Service | null;
-};
+  priceOnly?: boolean;
+}
 
-export const ServiceFormDialog: React.FC<ServiceFormDialogProps> = ({
-  isOpen,
-  onClose,
-  onSave,
-  currentService
+export const ServiceFormDialog: React.FC<ServiceFormDialogProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  currentService,
+  priceOnly = false
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {currentService ? "Editar Serviço" : "Novo Serviço"}
+            {currentService
+              ? priceOnly
+                ? `Editar Preço: ${currentService.name}`
+                : `Editar Serviço: ${currentService.name}`
+              : "Adicionar Novo Serviço"
+            }
           </DialogTitle>
         </DialogHeader>
         <ServiceForm 
           onSave={onSave}
           onCancel={onClose}
           initialData={currentService}
+          priceOnly={priceOnly}
         />
       </DialogContent>
     </Dialog>
   );
 };
 
-// Delete Confirmation Dialog
-type DeleteDialogProps = {
+interface DeleteServiceDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void>;
+  onConfirm: () => void;
   serviceName: string | null;
-};
+}
 
-export const DeleteServiceDialog: React.FC<DeleteDialogProps> = ({
+export const DeleteServiceDialog: React.FC<DeleteServiceDialogProps> = ({
   isOpen,
   onClose,
   onConfirm,
@@ -62,18 +68,18 @@ export const DeleteServiceDialog: React.FC<DeleteDialogProps> = ({
           <p className="text-gray-500 text-sm mt-2">Esta ação não pode ser desfeita.</p>
           
           <div className="pt-6 flex justify-end space-x-2">
-            <Button 
-              variant="outline" 
+            <button 
+              className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100"
               onClick={onClose}
             >
               Cancelar
-            </Button>
-            <Button 
-              variant="destructive"
+            </button>
+            <button 
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
               onClick={onConfirm}
             >
               Excluir
-            </Button>
+            </button>
           </div>
         </div>
       </DialogContent>

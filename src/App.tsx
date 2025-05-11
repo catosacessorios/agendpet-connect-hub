@@ -17,6 +17,17 @@ import Horarios from "./pages/dashboard/Horarios";
 import Clientes from "./pages/dashboard/Clientes";
 import Configuracoes from "./pages/dashboard/Configuracoes";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AdminProvider } from "./contexts/AdminContext";
+import ProtectedAdminRoute from "./components/admin/ProtectedAdminRoute";
+
+// Admin pages
+import AdminDashboard from "./pages/admin/Admin";
+import AdminServicos from "./pages/admin/AdminServicos";
+import AdminHorarios from "./pages/admin/AdminHorarios";
+import AdminPrecos from "./pages/admin/AdminPrecos";
+import AdminClientes from "./pages/admin/AdminClientes";
+import AdminAgendamentos from "./pages/admin/AdminAgendamentos";
+import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +59,15 @@ const AppRoutes = () => (
     <Route path="/dashboard/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
     <Route path="/dashboard/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
     
+    {/* Admin protected routes */}
+    <Route path="/admin" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
+    <Route path="/admin/servicos" element={<ProtectedAdminRoute><AdminServicos /></ProtectedAdminRoute>} />
+    <Route path="/admin/horarios" element={<ProtectedAdminRoute><AdminHorarios /></ProtectedAdminRoute>} />
+    <Route path="/admin/precos" element={<ProtectedAdminRoute><AdminPrecos /></ProtectedAdminRoute>} />
+    <Route path="/admin/clientes" element={<ProtectedAdminRoute><AdminClientes /></ProtectedAdminRoute>} />
+    <Route path="/admin/agendamentos" element={<ProtectedAdminRoute><AdminAgendamentos /></ProtectedAdminRoute>} />
+    <Route path="/admin/configuracoes" element={<ProtectedAdminRoute><AdminConfiguracoes /></ProtectedAdminRoute>} />
+    
     {/* Catch-all route */}
     <Route path="*" element={<NotFound />} />
   </Routes>
@@ -58,9 +78,11 @@ const App = () => (
     <BrowserRouter>
       <TooltipProvider>
         <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <AppRoutes />
+          <AdminProvider>
+            <Toaster />
+            <Sonner />
+            <AppRoutes />
+          </AdminProvider>
         </AuthProvider>
       </TooltipProvider>
     </BrowserRouter>

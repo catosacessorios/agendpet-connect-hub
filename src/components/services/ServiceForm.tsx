@@ -11,6 +11,7 @@ type ServiceFormProps = {
   onSave: (formData: ServiceFormData) => Promise<boolean>;
   onCancel: () => void;
   initialData?: Service | null;
+  priceOnly?: boolean;
 };
 
 export type ServiceFormData = {
@@ -24,7 +25,8 @@ export type ServiceFormData = {
 export const ServiceForm: React.FC<ServiceFormProps> = ({ 
   onSave, 
   onCancel, 
-  initialData 
+  initialData,
+  priceOnly = false
 }) => {
   const [formData, setFormData] = useState<ServiceFormData>({
     name: "",
@@ -58,9 +60,16 @@ export const ServiceForm: React.FC<ServiceFormProps> = ({
   };
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.price || !formData.duration) {
-      toast.error("Preencha todos os campos obrigatórios");
-      return;
+    if (priceOnly) {
+      if (!formData.price) {
+        toast.error("Preencha o preço");
+        return;
+      }
+    } else {
+      if (!formData.name || !formData.price || !formData.duration) {
+        toast.error("Preencha todos os campos obrigatórios");
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -76,27 +85,31 @@ export const ServiceForm: React.FC<ServiceFormProps> = ({
 
   return (
     <div className="space-y-4 py-4">
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Nome do Serviço *</label>
-        <Input 
-          name="name"
-          value={formData.name}
-          onChange={handleInputChange}
-          placeholder="Ex: Banho para Cães Pequenos"
-        />
-      </div>
+      {!priceOnly && (
+        <>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Nome do Serviço *</label>
+            <Input 
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              placeholder="Ex: Banho para Cães Pequenos"
+            />
+          </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Descrição (opcional)</label>
-        <Textarea 
-          name="description"
-          value={formData.description}
-          onChange={handleInputChange}
-          placeholder="Detalhes sobre o serviço"
-        />
-      </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Descrição (opcional)</label>
+            <Textarea 
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              placeholder="Detalhes sobre o serviço"
+            />
+          </div>
+        </>
+      )}
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className={priceOnly ? "" : "grid grid-cols-2 gap-4"}>
         <div className="space-y-2">
           <label className="text-sm font-medium">Preço (R$) *</label>
           <Input 
@@ -110,26 +123,30 @@ export const ServiceForm: React.FC<ServiceFormProps> = ({
           />
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Duração (minutos) *</label>
-          <Input 
-            name="duration"
-            type="number"
-            min="1"
-            value={formData.duration}
-            onChange={handleInputChange}
-            placeholder="60"
-          />
-        </div>
+        {!priceOnly && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Duração (minutos) *</label>
+            <Input 
+              name="duration"
+              type="number"
+              min="1"
+              value={formData.duration}
+              onChange={handleInputChange}
+              placeholder="60"
+            />
+          </div>
+        )}
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Switch 
-          checked={formData.active}
-          onCheckedChange={handleSwitchChange}
-        />
-        <label className="text-sm font-medium">Serviço ativo</label>
-      </div>
+      {!priceOnly && (
+        <div className="flex items-center space-x-2">
+          <Switch 
+            checked={formData.active}
+            onCheckedChange={handleSwitchChange}
+          />
+          <label className="text-sm font-medium">Serviço ativo</label>
+        </div>
+      )}
       
       <div className="pt-4 flex justify-end space-x-2">
         <Button 
@@ -143,7 +160,7 @@ export const ServiceForm: React.FC<ServiceFormProps> = ({
           onClick={handleSubmit}
           disabled={isSubmitting}
         >
-          Salvar
+          {priceOnly ? "Atualizar Preço" : "Salvar"}
         </Button>
       </div>
     </div>
