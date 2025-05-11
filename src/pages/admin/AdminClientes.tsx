@@ -16,28 +16,102 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 const AdminClientes = () => {
   const {
     clients,
-    filteredClients,
-    selectedClient,
+    loading,
     pets,
     searchQuery,
     setSearchQuery,
-    setSelectedClient,
-    isClientFormOpen,
-    isPetFormOpen,
-    isDeleteDialogOpen,
-    itemToDelete,
-    handleAddClient,
-    handleSelectClient,
-    handleSaveClient,
-    handleCloseClientForm,
-    handleAddPet,
-    handleSavePet,
-    handleClosePetForm,
-    handleDeletePet,
-    handleDeleteClient,
-    handleOpenDeleteDialog,
-    handleCloseDeleteDialog
+    saveClient,
+    savePet,
+    deleteItem
   } = useClients();
+  
+  // Estados locais adicionais necessários para a página de admin
+  const [selectedClient, setSelectedClient] = useState<any | null>(null);
+  const [isClientFormOpen, setIsClientFormOpen] = useState(false);
+  const [isPetFormOpen, setIsPetFormOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{
+    type: 'client' | 'pet';
+    id: string;
+    name: string;
+  } | null>(null);
+  const [currentClient, setCurrentClient] = useState<any | null>(null);
+  const [currentPet, setCurrentPet] = useState<any | null>(null);
+
+  // Handlers específicos para esta página
+  const handleAddClient = (client?: any) => {
+    setCurrentClient(client || null);
+    setIsClientFormOpen(true);
+  };
+
+  const handleSelectClient = (clientId: string) => {
+    const client = clients.find(c => c.id === clientId);
+    if (client) {
+      setSelectedClient(client);
+    }
+  };
+
+  const handleCloseClientForm = () => {
+    setIsClientFormOpen(false);
+    setCurrentClient(null);
+  };
+
+  const handleSaveClient = async (clientData: any) => {
+    const success = await saveClient(clientData, currentClient);
+    if (success) {
+      handleCloseClientForm();
+    }
+    return success;
+  };
+
+  const handleAddPet = (pet?: any, client?: any) => {
+    setCurrentPet(pet || null);
+    setCurrentClient(client || selectedClient);
+    setIsPetFormOpen(true);
+  };
+
+  const handleClosePetForm = () => {
+    setIsPetFormOpen(false);
+    setCurrentPet(null);
+  };
+
+  const handleSavePet = async (petData: any) => {
+    if (!currentClient?.id) return false;
+    const success = await savePet(petData, currentClient.id);
+    if (success) {
+      handleClosePetForm();
+    }
+    return success;
+  };
+
+  const handleDeleteClient = async () => {
+    if (!itemToDelete || itemToDelete.type !== 'client') return;
+    await deleteItem(itemToDelete.type, itemToDelete.id);
+    setIsDeleteDialogOpen(false);
+    if (selectedClient?.id === itemToDelete.id) {
+      setSelectedClient(null);
+    }
+  };
+
+  const handleDeletePet = async () => {
+    if (!itemToDelete || itemToDelete.type !== 'pet') return;
+    await deleteItem(itemToDelete.type, itemToDelete.id);
+    setIsDeleteDialogOpen(false);
+  };
+
+  const handleOpenDeleteDialog = (type: 'client' | 'pet', item: any) => {
+    setItemToDelete({
+      type,
+      id: item.id,
+      name: type === 'client' ? item.name : item.nome
+    });
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setIsDeleteDialogOpen(false);
+    setItemToDelete(null);
+  };
 
   return (
     <AdminLayout title="Gerenciar Clientes">
@@ -48,7 +122,11 @@ const AdminClientes = () => {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredClients.map(client => (
+        {clients.filter(client => 
+          client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          client.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          client.phone?.toLowerCase().includes(searchQuery.toLowerCase())
+        ).map(client => (
           <ClientCard 
             key={client.id}
             client={client}
@@ -58,9 +136,15 @@ const AdminClientes = () => {
           />
         ))}
         
-        {filteredClients.length === 0 && (
+        {clients.length === 0 && !loading && (
           <div className="col-span-full text-center py-8">
             <p className="text-gray-500">Nenhum cliente encontrado</p>
+          </div>
+        )}
+        
+        {loading && (
+          <div className="col-span-full text-center py-8">
+            <p className="text-gray-500">Carregando clientes...</p>
           </div>
         )}
       </div>
@@ -88,8 +172,9 @@ const AdminClientes = () => {
               </div>
 
               <PetsList
-                pets={pets}
-                onDelete={handleOpenDeleteDialog}
+                pets={pets[selectedClient.id] || []}
+                onEdit={(pet) => handleAddPet(pet)}
+                onDelete={(pet) => handleOpenDeleteDialog('pet', pet)}
               />
             </div>
           </DialogContent>
@@ -101,6 +186,7 @@ const AdminClientes = () => {
         isOpen={isClientFormOpen}
         onClose={handleCloseClientForm}
         onSave={handleSaveClient}
+        initialData={currentClient}
       />
 
       {/* Pet Form Dialog */}
@@ -108,6 +194,7 @@ const AdminClientes = () => {
         isOpen={isPetFormOpen}
         onClose={handleClosePetForm}
         onSave={handleSavePet}
+        initialData={currentPet}
       />
 
       {/* Delete Confirmation Dialog */}

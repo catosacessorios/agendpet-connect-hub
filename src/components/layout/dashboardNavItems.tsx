@@ -1,5 +1,5 @@
 
-import { CalendarDays, Users, Shopping, Scissors, Settings, Home } from "lucide-react";
+import { CalendarDays, Users, Scissors, Settings, Home } from "lucide-react";
 
 export const dashboardNavItems = [
   { 

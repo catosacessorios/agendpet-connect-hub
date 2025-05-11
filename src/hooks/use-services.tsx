@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export type Service = {
   id: string;
@@ -11,78 +11,81 @@ export type Service = {
   price: number;
   duration: number;
   active: boolean;
+  petshop_id: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export const useServices = () => {
-  const { petshopProfile } = useAuth();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
+  const { petshopProfile } = useAuth();
+
+  // Filtrar serviços com base na pesquisa
+  const filteredServices = services.filter((service) =>
+    service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (service.description && service.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   useEffect(() => {
-    if (petshopProfile?.id) {
-      fetchServices();
-    }
-  }, [petshopProfile]);
-
-  useEffect(() => {
-    filterServices();
-  }, [services, searchQuery]);
+    fetchServices();
+  }, []);
 
   const fetchServices = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("services")
-        .select("*")
-        .eq("petshop_id", petshopProfile?.id)
-        .order("name");
-
-      if (error) throw error;
       
+      // Se não estiver logado como petshop, apenas buscar serviços ativos
+      let query = supabase.from("services").select("*");
+      
+      if (petshopProfile?.id) {
+        // Se estiver logado como petshop, buscar todos os serviços desse petshop
+        query = query.eq("petshop_id", petshopProfile.id);
+      } else {
+        // Se não estiver logado como petshop, apenas buscar serviços ativos
+        query = query.eq("active", true);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
       setServices(data || []);
     } catch (error) {
       console.error("Error fetching services:", error);
+      toast.error("Erro ao buscar serviços");
     } finally {
       setLoading(false);
     }
   };
 
-  const filterServices = () => {
-    if (!searchQuery) {
-      setFilteredServices(services);
-      return;
-    }
-
-    const query = searchQuery.toLowerCase();
-    const filtered = services.filter(service => 
-      service.name.toLowerCase().includes(query) || 
-      (service.description?.toLowerCase().includes(query) ?? false)
-    );
-    
-    setFilteredServices(filtered);
-  };
-
-  const createService = async (serviceData: Omit<Service, 'id'>) => {
+  const createService = async (serviceData: Omit<Service, "id">) => {
     try {
-      const { error } = await supabase
-        .from("services")
-        .insert(serviceData);
+      if (!petshopProfile?.id) {
+        toast.error("Você precisa estar logado para criar um serviço");
+        return false;
+      }
+      
+      const dataWithPetshopId = {
+        ...serviceData,
+        petshop_id: petshopProfile.id
+      };
+      
+      const { error } = await supabase.from("services").insert(dataWithPetshopId);
       
       if (error) throw error;
       
       toast.success("Serviço criado com sucesso!");
-      await fetchServices();
+      fetchServices();
       return true;
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao criar serviço");
+    } catch (error) {
       console.error("Error creating service:", error);
+      toast.error("Erro ao criar serviço");
       return false;
     }
   };
 
-  const updateService = async (id: string, serviceData: Partial<Omit<Service, 'id'>>) => {
+  const updateService = async (id: string, serviceData: Partial<Service>) => {
     try {
       const { error } = await supabase
         .from("services")
@@ -92,30 +95,27 @@ export const useServices = () => {
       if (error) throw error;
       
       toast.success("Serviço atualizado com sucesso!");
-      await fetchServices();
+      fetchServices();
       return true;
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao atualizar serviço");
+    } catch (error) {
       console.error("Error updating service:", error);
+      toast.error("Erro ao atualizar serviço");
       return false;
     }
   };
 
   const deleteService = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from("services")
-        .delete()
-        .eq("id", id);
-
+      const { error } = await supabase.from("services").delete().eq("id", id);
+      
       if (error) throw error;
-
+      
       toast.success("Serviço excluído com sucesso!");
-      await fetchServices();
+      fetchServices();
       return true;
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao excluir serviço");
+    } catch (error) {
       console.error("Error deleting service:", error);
+      toast.error("Erro ao excluir serviço");
       return false;
     }
   };
@@ -128,6 +128,6 @@ export const useServices = () => {
     setSearchQuery,
     createService,
     updateService,
-    deleteService,
+    deleteService
   };
 };
