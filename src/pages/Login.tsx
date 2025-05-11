@@ -8,29 +8,38 @@ import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { toast } from "sonner";
+import PasswordInput from "@/components/PasswordInput";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const loginSchema = z.object({
+  email: z.string().email("Email inválido").min(1, "Email é obrigatório"),
+  password: z.string().min(1, "Senha é obrigatória")
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 const Login = () => {
   const navigate = useNavigate();
   const { signIn } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const form = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: ""
+    }
+  });
+
+  const handleLogin = async (data: LoginFormData) => {
     setLoading(true);
 
     try {
-      // Check required fields
-      if (!email || !password) {
-        toast.error("Preencha todos os campos");
-        setLoading(false);
-        return;
-      }
-
-      await signIn(email, password);
-      // The navigate is handled inside signIn function
+      await signIn(data.email, data.password);
+      // Navigation is handled inside signIn function
     } catch (error: any) {
       console.error("Error logging in:", error);
       toast.error(error.message || "Erro ao fazer login");
@@ -54,65 +63,65 @@ const Login = () => {
               Entre com seus dados para acessar o sistema
             </CardDescription>
           </CardHeader>
-          <form onSubmit={handleLogin}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu@email.com"
-                  required
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleLogin)}>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="seu@email.com" 
+                          type="email"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="********"
-                    required
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOffIcon className="h-4 w-4" />
-                    ) : (
-                      <EyeIcon className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha</FormLabel>
+                      <FormControl>
+                        <PasswordInput 
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="********"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
 
-            <CardFooter className="flex flex-col">
-              <Button
-                className="w-full"
-                type="submit"
-                disabled={loading}
-              >
-                {loading ? "Entrando..." : "Entrar"}
-              </Button>
+              <CardFooter className="flex flex-col">
+                <Button
+                  className="w-full"
+                  type="submit"
+                  disabled={loading}
+                >
+                  {loading ? "Entrando..." : "Entrar"}
+                </Button>
 
-              <p className="mt-4 text-center text-sm text-gray-600">
-                Não tem uma conta?{" "}
-                <Link to="/cadastro" className="text-primary hover:underline">
-                  Cadastre-se
-                </Link>
-              </p>
-            </CardFooter>
-          </form>
+                <p className="mt-4 text-center text-sm text-gray-600">
+                  Não tem uma conta?{" "}
+                  <Link to="/cadastro" className="text-primary hover:underline">
+                    Cadastre-se
+                  </Link>
+                </p>
+              </CardFooter>
+            </form>
+          </Form>
         </Card>
       </div>
     </div>
