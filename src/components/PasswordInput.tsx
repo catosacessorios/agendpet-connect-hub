@@ -10,6 +10,7 @@ type PasswordInputProps = {
   placeholder?: string;
   className?: string;
   required?: boolean;
+  disabled?: boolean; // Adicionada a propriedade disabled
 };
 
 const PasswordInput = ({
@@ -18,6 +19,7 @@ const PasswordInput = ({
   placeholder = "Senha",
   className,
   required = false,
+  disabled = false, // Adicionado valor padrão
 }: PasswordInputProps) => {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -34,6 +36,7 @@ const PasswordInput = ({
         placeholder={placeholder}
         className={className}
         required={required}
+        disabled={disabled} // Passando a propriedade para o Input
       />
       <Button
         type="button"
@@ -41,6 +44,7 @@ const PasswordInput = ({
         size="icon"
         onClick={togglePasswordVisibility}
         className="absolute right-0 top-0 h-full px-3 text-gray-500 hover:text-gray-800"
+        disabled={disabled} // Desabilitando também o botão quando o input está desabilitado
       >
         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
       </Button>
