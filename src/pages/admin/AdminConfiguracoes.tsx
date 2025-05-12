@@ -10,10 +10,18 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
+type PetshopDataType = {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  description: string;
+}
+
 const AdminConfiguracoes = () => {
   const { petshopProfile } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<PetshopDataType>({
     name: "",
     email: "",
     phone: "",
@@ -23,15 +31,34 @@ const AdminConfiguracoes = () => {
 
   useEffect(() => {
     if (petshopProfile) {
-      setFormData({
-        name: petshopProfile.name,
-        email: petshopProfile.email || "",
-        phone: petshopProfile.phone || "",
-        address: petshopProfile.address || "",
-        description: petshopProfile.description || ""
-      });
+      // Fetch complete petshop data since the profile might not have all fields
+      fetchPetshopData();
     }
   }, [petshopProfile]);
+
+  const fetchPetshopData = async () => {
+    if (!petshopProfile?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("petshops")
+        .select("*")
+        .eq("id", petshopProfile.id)
+        .single();
+        
+      if (error) throw error;
+      
+      setFormData({
+        name: data.name || "",
+        email: data.email || "",
+        phone: data.phone || "",
+        address: data.address || "",
+        description: data.description || ""
+      });
+    } catch (error) {
+      console.error("Error fetching petshop data:", error);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ClienteLayout from "@/components/layout/ClienteLayout";
@@ -107,7 +106,7 @@ const ClientePerfil = () => {
         name: data.name,
         species: data.species,
         breed: data.breed || null,
-        age: data.age ? Number(data.age) : null
+        age: data.age !== undefined ? data.age : null
       };
       
       const success = await addPet(petData);

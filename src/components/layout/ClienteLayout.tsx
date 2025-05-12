@@ -46,7 +46,6 @@ const ClienteLayout: React.FC<ClienteLayoutProps> = ({ children, title }) => {
             navItems={clienteNavItems} 
             petshopProfile={{
               name: "Portal do Cliente",
-              id: "",
               logo_url: null
             }} 
             handleLogout={handleLogout} 
@@ -67,7 +66,6 @@ const ClienteLayout: React.FC<ClienteLayoutProps> = ({ children, title }) => {
             navItems={clienteNavItems} 
             petshopProfile={{
               name: "Portal do Cliente",
-              id: "",
               logo_url: null
             }} 
             handleLogout={handleLogout}

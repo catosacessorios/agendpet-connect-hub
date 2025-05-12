@@ -51,7 +51,17 @@ export const useCliente = () => {
 
       if (clienteError) throw clienteError;
       
-      setCliente(clienteData);
+      // Convert the data to ensure it has the correct shape
+      const clienteWithUserId: Cliente = {
+        id: clienteData.id,
+        name: clienteData.name,
+        email: clienteData.email,
+        phone: clienteData.phone,
+        user_id: user!.id,
+        created_at: clienteData.created_at
+      };
+      
+      setCliente(clienteWithUserId);
 
       // Buscar pets do cliente
       if (clienteData) {
