@@ -27,24 +27,14 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       try {
-        // In a real application, you would check against a roles table or similar
-        // For now, we'll check if the user has admin privileges based on email
-        // This is a simplified example - in production, use proper role-based authorization
-        const { data, error } = await supabase
-          .from("petshops")
-          .select("id")
-          .eq("user_id", user.id)
-          .single();
-
-        if (error) {
-          throw error;
-        }
-
-        // For demo purposes, all petshop owners are admins
-        // In a real application, you would check against a specific admin role
-        setIsAdmin(!!data);
+        // Verificar se o email do usuário é o email de administrador definido
+        const isAdminUser = user.email === 'catosacessorios@gmail.com';
+        
+        // Em um sistema real, você provavelmente verificaria uma tabela de administradores
+        // ou papéis de usuários. Por ora, usamos um email fixo para demonstração.
+        setIsAdmin(isAdminUser);
       } catch (error) {
-        console.error("Error checking admin status:", error);
+        console.error("Erro ao verificar status de administrador:", error);
         setIsAdmin(false);
       } finally {
         setLoading(false);
@@ -64,7 +54,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({
 export const useAdmin = () => {
   const context = useContext(AdminContext);
   if (context === undefined) {
-    throw new Error("useAdmin must be used within an AdminProvider");
+    throw new Error("useAdmin deve ser usado dentro de um AdminProvider");
   }
   return context;
 };

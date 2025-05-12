@@ -2,7 +2,7 @@ import { useState } from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2 } from "lucide-react";
+import { Edit } from "lucide-react";
 import { useServices, Service } from "@/hooks/use-services";
 import { useAuth } from "@/contexts/AuthContext";
 import { ServiceFormDialog, DeleteServiceDialog } from "@/components/services/ServiceDialogs";
