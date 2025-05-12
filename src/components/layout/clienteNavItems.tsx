@@ -1,25 +1,33 @@
 
 import { Home, Calendar, Settings, Book } from "lucide-react";
+import { ReactNode } from "react";
 
-export const clienteNavItems = [
+// Definindo o tipo correto para os itens de navegação
+type NavItem = {
+  label: string;
+  href: string;
+  icon: ReactNode;
+};
+
+export const clienteNavItems: NavItem[] = [
   {
     label: "Dashboard",
     href: "/cliente/dashboard",
-    icon: Home
+    icon: <Home />
   },
   {
     label: "Serviços",
     href: "/cliente/servicos",
-    icon: Book
+    icon: <Book />
   },
   {
     label: "Meus Agendamentos",
     href: "/cliente/agendamentos",
-    icon: Calendar
+    icon: <Calendar />
   },
   {
     label: "Meu Perfil",
     href: "/cliente/perfil",
-    icon: Settings
+    icon: <Settings />
   }
 ];
