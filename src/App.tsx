@@ -29,6 +29,15 @@ import AdminClientes from "./pages/admin/AdminClientes";
 import AdminAgendamentos from "./pages/admin/AdminAgendamentos";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 
+// Cliente pages
+import ClienteLogin from "./pages/cliente/ClienteLogin";
+import ClienteCadastro from "./pages/cliente/ClienteCadastro";
+import ClienteDashboard from "./pages/cliente/ClienteDashboard";
+import ClienteServicos from "./pages/cliente/ClienteServicos";
+import ClienteAgendar from "./pages/cliente/ClienteAgendar";
+import ClienteAgendamentos from "./pages/cliente/ClienteAgendamentos";
+import ClientePerfil from "./pages/cliente/ClientePerfil";
+
 const queryClient = new QueryClient();
 
 // Protected route component
@@ -67,6 +76,15 @@ const AppRoutes = () => (
     <Route path="/admin/clientes" element={<ProtectedAdminRoute><AdminClientes /></ProtectedAdminRoute>} />
     <Route path="/admin/agendamentos" element={<ProtectedAdminRoute><AdminAgendamentos /></ProtectedAdminRoute>} />
     <Route path="/admin/configuracoes" element={<ProtectedAdminRoute><AdminConfiguracoes /></ProtectedAdminRoute>} />
+    
+    {/* Cliente routes */}
+    <Route path="/cliente/login" element={<ClienteLogin />} />
+    <Route path="/cliente/cadastro" element={<ClienteCadastro />} />
+    <Route path="/cliente/dashboard" element={<ClienteDashboard />} />
+    <Route path="/cliente/servicos" element={<ClienteServicos />} />
+    <Route path="/cliente/agendar/:serviceId" element={<ClienteAgendar />} />
+    <Route path="/cliente/agendamentos" element={<ClienteAgendamentos />} />
+    <Route path="/cliente/perfil" element={<ClientePerfil />} />
     
     {/* Catch-all route */}
     <Route path="*" element={<NotFound />} />
