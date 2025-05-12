@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 const Login = () => {
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { user, signIn, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const form = useForm<LoginFormData>({
@@ -32,19 +32,39 @@ const Login = () => {
     }
   });
 
+  useEffect(() => {
+    // Redirect to dashboard if user is already logged in
+    if (user) {
+      console.log("User already logged in, redirecting to dashboard");
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
+
   const handleLogin = async (data: LoginFormData) => {
+    if (loading) return;
+    
     setLoading(true);
+    console.log("Login form submitted:", data.email);
 
     try {
       await signIn(data.email, data.password);
-      // Navigation is handled inside signIn function
+      // Navigation handled in signIn function
     } catch (error: any) {
-      console.error("Error logging in:", error);
+      console.error("Error in handleLogin:", error);
       toast.error(error.message || "Erro ao fazer login");
     } finally {
       setLoading(false);
     }
   };
+
+  // If still checking authentication status, show loading state
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
+        <p className="text-gray-600">Verificando autenticação...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
@@ -76,6 +96,7 @@ const Login = () => {
                           placeholder="seu@email.com" 
                           type="email"
                           {...field}
+                          disabled={loading}
                         />
                       </FormControl>
                       <FormMessage />
@@ -94,6 +115,7 @@ const Login = () => {
                           placeholder="********"
                           value={field.value}
                           onChange={field.onChange}
+                          disabled={loading}
                         />
                       </FormControl>
                       <FormMessage />

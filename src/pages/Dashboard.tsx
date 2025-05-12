@@ -23,19 +23,25 @@ const Dashboard = () => {
   } = useDashboard();
 
   useEffect(() => {
+    // If authentication is done loading and user is not logged in, redirect to login
     if (!authLoading && !user) {
+      console.log("No user found, redirecting to login");
       navigate("/login");
     }
   }, [user, authLoading, navigate]);
 
+  // Show loading state while checking authentication
   if (authLoading) {
-    return <div className="flex items-center justify-center h-screen">
-      <p className="text-lg">Carregando...</p>
-    </div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-lg">Carregando autenticação...</p>
+      </div>
+    );
   }
 
+  // If no user is logged in, return null (will be redirected by useEffect)
   if (!user) {
-    return null; // Will be redirected by the useEffect
+    return null;
   }
 
   return (
