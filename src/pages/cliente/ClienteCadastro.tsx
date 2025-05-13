@@ -49,7 +49,19 @@ const ClienteCadastro = () => {
       if (authError) throw authError;
 
       if (authData.user) {
-        // 2. Criar o cliente no banco de dados
+        // 2. Definir o tipo de usuário como 'cliente'
+        const { error: typeError } = await supabase
+          .from('user_types')
+          .insert([
+            {
+              user_id: authData.user.id,
+              type: 'cliente'
+            }
+          ]);
+
+        if (typeError) throw typeError;
+
+        // 3. Criar o cliente no banco de dados
         const { error: clientError } = await supabase
           .from("clients")
           .insert([

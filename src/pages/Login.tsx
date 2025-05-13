@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserType } from "@/hooks/use-user-type";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -22,6 +23,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 const Login = () => {
   const navigate = useNavigate();
   const { user, signIn, loading: authLoading } = useAuth();
+  const { userType, loading: typeLoading } = useUserType();
   const [loading, setLoading] = useState(false);
 
   const form = useForm<LoginFormData>({
@@ -33,12 +35,23 @@ const Login = () => {
   });
 
   useEffect(() => {
-    // Redirect to dashboard if user is already logged in
-    if (user) {
-      console.log("User already logged in, redirecting to dashboard");
-      navigate("/dashboard");
+    // Handle routing based on user type
+    if (user && !authLoading && !typeLoading) {
+      if (userType === 'admin') {
+        navigate('/painel-administrador');
+      } else if (userType === 'cliente') {
+        navigate('/painel-cliente');
+      } else if (userType === null) {
+        // Type not set yet, redirect based on user role
+        if (user.email === 'admin@example.com') {
+          // This is a temporary check, replace with more robust role assignment
+          navigate('/dashboard');
+        } else {
+          navigate('/cliente/dashboard');
+        }
+      }
     }
-  }, [user, navigate]);
+  }, [user, userType, authLoading, typeLoading, navigate]);
 
   const handleLogin = async (data: LoginFormData) => {
     if (loading) return;
@@ -48,7 +61,7 @@ const Login = () => {
 
     try {
       await signIn(data.email, data.password);
-      // Navigation handled in signIn function
+      // Navigation handled in useEffect based on user type
     } catch (error: any) {
       console.error("Error in handleLogin:", error);
       toast.error(error.message || "Erro ao fazer login");
@@ -58,10 +71,19 @@ const Login = () => {
   };
 
   // If still checking authentication status, show loading state
-  if (authLoading) {
+  if (authLoading || (user && typeLoading)) {
     return (
       <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
         <p className="text-gray-600">Verificando autenticação...</p>
+      </div>
+    );
+  }
+
+  // Don't show login if user is already logged in
+  if (user) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
+        <p className="text-gray-600">Redirecionando...</p>
       </div>
     );
   }

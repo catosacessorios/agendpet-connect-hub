@@ -1,39 +1,24 @@
-
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import ClienteLayout from "@/components/layout/ClienteLayout";
-import { useAuth } from "@/contexts/AuthContext";
-import { useCliente } from "@/hooks/use-cliente";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter,
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Form, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormControl, 
-  FormMessage 
-} from "@/components/ui/form";
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { format, parse, addMinutes } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
+
+import ClienteLayout from "@/components/layout/ClienteLayout";
+import { useCliente } from "@/hooks/use-cliente";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { addDays, isAfter, isBefore, parseISO, addMinutes } from "date-fns";
-import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, Clock } from "lucide-react";
 
 // Tipos
 type Service = {
@@ -54,398 +39,435 @@ type TimeSlot = {
 type Pet = {
   id: string;
   name: string;
+  species: string; // Add the species field to the pet type
 };
 
 // Esquema de validação
-const agendamentoSchema = z.object({
-  date: z.date({
-    required_error: "Selecione uma data para o agendamento",
-  }),
-  time: z.string({
-    required_error: "Selecione um horário disponível",
-  }),
+const formSchema = z.object({
   pet_id: z.string({
-    required_error: "Selecione um pet para o agendamento",
+    required_error: "Selecione um pet",
+  }),
+  date: z.date({
+    required_error: "Selecione uma data",
+  }),
+  time_slot: z.string({
+    required_error: "Selecione um horário",
   }),
   notes: z.string().optional(),
 });
 
-type AgendamentoFormData = z.infer<typeof agendamentoSchema>;
+type FormValues = z.infer<typeof formSchema>;
 
 const ClienteAgendar = () => {
   const { serviceId } = useParams();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
   const { cliente, pets, loading: clienteLoading } = useCliente();
+  
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
-  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
-  const [saving, setSaving] = useState(false);
-
-  const form = useForm<AgendamentoFormData>({
-    resolver: zodResolver(agendamentoSchema),
+  const [submitting, setSubmitting] = useState(false);
+  const [availableDates, setAvailableDates] = useState<Date[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
+      pet_id: "",
       notes: "",
     },
   });
-
-  const selectedDate = form.watch("date");
-
+  
+  // Fetch service data
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/cliente/login");
-      return;
+    const fetchServiceData = async () => {
+      if (!serviceId) return;
+      
+      try {
+        setLoading(true);
+        
+        // Fetch service details
+        const { data: serviceData, error: serviceError } = await supabase
+          .from("services")
+          .select("*")
+          .eq("id", serviceId)
+          .single();
+          
+        if (serviceError) throw serviceError;
+        
+        if (!serviceData) {
+          toast.error("Serviço não encontrado");
+          navigate("/cliente/servicos");
+          return;
+        }
+        
+        setService(serviceData);
+        
+        // Fetch available time slots
+        const { data: slotsData, error: slotsError } = await supabase
+          .from("available_slots")
+          .select("*")
+          .eq("petshop_id", serviceData.petshop_id)
+          .order("day_of_week")
+          .order("start_time");
+          
+        if (slotsError) throw slotsError;
+        
+        // Generate available dates (next 30 days)
+        const dates = generateAvailableDates(slotsData || []);
+        setAvailableDates(dates);
+        
+      } catch (error) {
+        console.error("Erro ao buscar dados:", error);
+        toast.error("Erro ao carregar informações do serviço");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchServiceData();
+  }, [serviceId, navigate]);
+  
+  // Generate available dates (next 30 days)
+  const generateAvailableDates = (slots: any[]) => {
+    const today = new Date();
+    const dates: Date[] = [];
+    const daysOfWeek = [...new Set(slots.map(slot => slot.day_of_week))];
+    
+    for (let i = 0; i < 30; i++) {
+      const date = new Date();
+      date.setDate(today.getDate() + i);
+      
+      if (daysOfWeek.includes(date.getDay())) {
+        dates.push(date);
+      }
     }
-
-    if (serviceId) {
-      fetchServiceData();
-    } else {
-      toast.error("Serviço não especificado");
-      navigate("/cliente/servicos");
-    }
-  }, [user, authLoading, serviceId, navigate]);
-
-  useEffect(() => {
-    if (selectedDate) {
-      fetchAvailableTimeSlots();
-    }
-  }, [selectedDate]);
-
-  const fetchServiceData = async () => {
+    
+    return dates;
+  };
+  
+  // Handle date selection
+  const handleDateSelect = async (date: Date | undefined) => {
+    if (!date || !service) return;
+    
+    setSelectedDate(date);
+    form.setValue("date", date);
+    
     try {
-      setLoading(true);
-
-      // Buscar dados do serviço
-      const { data: serviceData, error: serviceError } = await supabase
-        .from("services")
-        .select("*")
-        .eq("id", serviceId)
-        .single();
-
-      if (serviceError) throw serviceError;
-      setService(serviceData);
-
-      // Buscar slots de horários disponíveis
+      // Get day of week for selected date
+      const dayOfWeek = date.getDay();
+      
+      // Fetch available slots for this day
       const { data: slotsData, error: slotsError } = await supabase
         .from("available_slots")
-        .select("*");
-
-      if (slotsError) throw slotsError;
-      setTimeSlots(slotsData || []);
-    } catch (error) {
-      console.error("Erro ao buscar dados do serviço:", error);
-      toast.error("Erro ao carregar dados do serviço");
-      navigate("/cliente/servicos");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchAvailableTimeSlots = async () => {
-    if (!selectedDate || !service) return;
-
-    try {
-      const dayOfWeek = selectedDate.getDay();
-      
-      // Filtrar slots disponíveis para o dia da semana selecionado
-      const availableSlots = timeSlots.filter(
-        (slot) => slot.day_of_week === dayOfWeek
-      );
-
-      // Formatar para array de horários
-      const formattedSlots: string[] = [];
-      const dateString = format(selectedDate, "yyyy-MM-dd");
-
-      for (const slot of availableSlots) {
-        // Dividir o horário em intervalos com base na duração do serviço
-        let startTime = parseISO(`${dateString}T${slot.start_time}`);
-        const endTime = parseISO(`${dateString}T${slot.end_time}`);
+        .select("*")
+        .eq("petshop_id", service.petshop_id)
+        .eq("day_of_week", dayOfWeek)
+        .order("start_time");
         
-        while (isBefore(addMinutes(startTime, service.duration), endTime)) {
-          const timeString = format(startTime, "HH:mm");
-          
-          // Verificar se já existe um agendamento neste horário
-          const { data: existingAppointments, error: appointmentError } = await supabase
-            .from("appointments")
-            .select("*")
-            .eq("appointment_date", dateString)
-            .eq("start_time", timeString)
-            .eq("service_id", service.id);
-            
-          if (appointmentError) throw appointmentError;
-          
-          if (!existingAppointments || existingAppointments.length === 0) {
-            formattedSlots.push(timeString);
-          }
-          
-          startTime = addMinutes(startTime, service.duration);
-        }
-      }
-
-      setAvailableTimeSlots(formattedSlots);
+      if (slotsError) throw slotsError;
+      
+      // Check for existing appointments on this date to filter out booked slots
+      const dateString = format(date, "yyyy-MM-dd");
+      
+      const { data: appointmentsData, error: appointmentsError } = await supabase
+        .from("appointments")
+        .select("start_time, end_time")
+        .eq("appointment_date", dateString)
+        .eq("petshop_id", service.petshop_id);
+        
+      if (appointmentsError) throw appointmentsError;
+      
+      // Filter out unavailable slots
+      const bookedSlots = appointmentsData || [];
+      const availableTimeSlots = (slotsData || []).filter(slot => {
+        const slotStart = slot.start_time;
+        const slotEnd = calculateEndTime(slotStart, service.duration);
+        
+        // Check if this slot overlaps with any booked slot
+        return !bookedSlots.some(booked => {
+          return (
+            (slotStart >= booked.start_time && slotStart < booked.end_time) ||
+            (slotEnd > booked.start_time && slotEnd <= booked.end_time) ||
+            (slotStart <= booked.start_time && slotEnd >= booked.end_time)
+          );
+        });
+      });
+      
+      setAvailableSlots(availableTimeSlots);
+      
     } catch (error) {
-      console.error("Erro ao buscar horários disponíveis:", error);
+      console.error("Erro ao buscar horários:", error);
       toast.error("Erro ao carregar horários disponíveis");
     }
   };
-
-  const handleSubmit = async (data: AgendamentoFormData) => {
-    if (!service || !cliente) return;
+  
+  // Calculate end time based on start time and service duration
+  const calculateEndTime = (startTime: string, durationMinutes: number) => {
+    const timeFormat = "HH:mm:ss";
+    const date = parse(startTime, timeFormat, new Date());
+    const endDate = addMinutes(date, durationMinutes);
+    return format(endDate, timeFormat);
+  };
+  
+  // Format time for display
+  const formatTime = (timeString: string) => {
+    return timeString.substring(0, 5);
+  };
+  
+  const onSubmit = async (data: FormValues) => {
+    if (!service || !cliente || !selectedDate) {
+      toast.error("Informações incompletas para agendamento");
+      return;
+    }
     
     try {
-      setSaving(true);
+      setSubmitting(true);
       
-      // Calcular horário de término
-      const startDate = new Date(`${format(data.date, "yyyy-MM-dd")}T${data.time}`);
-      const endDate = addMinutes(startDate, service.duration);
-      const endTime = format(endDate, "HH:mm");
+      // Get selected time slot
+      const selectedSlot = availableSlots.find(slot => 
+        slot.start_time === data.time_slot
+      );
       
+      if (!selectedSlot) {
+        toast.error("Horário inválido ou não disponível");
+        return;
+      }
+      
+      const startTime = selectedSlot.start_time;
+      const endTime = calculateEndTime(startTime, service.duration);
+      const formattedDate = format(data.date, "yyyy-MM-dd");
+      
+      // Create appointment data
       const appointmentData = {
         client_id: cliente.id,
         service_id: service.id,
         pet_id: data.pet_id,
-        appointment_date: format(data.date, "yyyy-MM-dd"),
-        start_time: data.time,
+        appointment_date: formattedDate,
+        start_time: startTime,
         end_time: endTime,
         status: "pending",
         notes: data.notes || null,
-        petshop_id: service.petshop_id, // Add the petshop_id from the service
+        petshop_id: service.petshop_id
       };
       
       const { error } = await supabase
         .from("appointments")
-        .insert(appointmentData); // Pass the single object, not an array
+        .insert(appointmentData);
         
       if (error) throw error;
       
       toast.success("Agendamento realizado com sucesso!");
       navigate("/cliente/agendamentos");
+      
     } catch (error: any) {
-      console.error("Erro ao criar agendamento:", error);
+      console.error("Erro ao realizar agendamento:", error);
       toast.error(error.message || "Erro ao realizar agendamento");
     } finally {
-      setSaving(false);
+      setSubmitting(false);
     }
   };
-
-  if (loading || authLoading || clienteLoading) {
+  
+  if (loading || clienteLoading) {
     return (
-      <ClienteLayout title="Agendamento de Serviço">
+      <ClienteLayout title="Agendar Serviço">
         <div className="flex justify-center items-center h-64">
-          <p>Carregando...</p>
+          <p className="text-gray-500">Carregando...</p>
         </div>
       </ClienteLayout>
     );
   }
-
+  
   if (!service) {
     return (
       <ClienteLayout title="Serviço não encontrado">
-        <div className="text-center">
-          <p className="mb-4">O serviço solicitado não foi encontrado.</p>
-          <Button onClick={() => navigate("/cliente/servicos")}>
-            Ver Serviços Disponíveis
-          </Button>
-        </div>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-gray-600 mb-4">O serviço solicitado não foi encontrado.</p>
+            <Button onClick={() => navigate("/cliente/servicos")}>
+              Voltar para serviços
+            </Button>
+          </CardContent>
+        </Card>
       </ClienteLayout>
     );
   }
-
+  
+  if (pets.length === 0) {
+    return (
+      <ClienteLayout title={`Agendar ${service.name}`}>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-gray-600 mb-4">Você precisa cadastrar um pet antes de agendar um serviço.</p>
+            <Button onClick={() => navigate("/cliente/perfil")}>
+              Cadastrar pet
+            </Button>
+          </CardContent>
+        </Card>
+      </ClienteLayout>
+    );
+  }
+  
   return (
-    <ClienteLayout title="Agendar Serviço">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Agendar Serviço</CardTitle>
-              <CardDescription>Selecione a data, horário e pet para o agendamento</CardDescription>
-            </CardHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSubmit)}>
-                <CardContent className="space-y-6">
-                  {/* Data */}
-                  <FormField
-                    control={form.control}
-                    name="date"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Data</FormLabel>
-                        <div className="flex items-center p-1">
-                          <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                          <div className="text-sm">
+    <ClienteLayout title={`Agendar ${service.name}`}>
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Detalhes do Serviço</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">{service.name}</h3>
+            {service.description && (
+              <p className="text-sm text-gray-600">{service.description}</p>
+            )}
+            <p className="text-sm">
+              <span className="font-medium">Duração:</span> {service.duration} minutos
+            </p>
+            <p className="text-sm">
+              <span className="font-medium">Preço:</span> {service.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Agendar</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="pet_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Selecione o pet</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um pet" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {pets.map(pet => (
+                          <SelectItem key={pet.id} value={pet.id}>
+                            {pet.name} ({pet.species})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Data</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
                             {field.value ? (
                               format(field.value, "PPP", { locale: ptBR })
                             ) : (
-                              "Selecione uma data"
+                              <span>Selecione uma data</span>
                             )}
-                          </div>
-                        </div>
-                        <FormControl>
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => 
-                              date.getDay() === 0 || // Domingo
-                              date.getDay() === 6 || // Sábado (se necessário desabilitar)
-                              isBefore(date, addDays(new Date(), 0)) // Data no passado
-                            }
-                            className="border rounded-md p-3"
-                          />
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Horário */}
-                  <FormField
-                    control={form.control}
-                    name="time"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Horário Disponível</FormLabel>
-                        <div className="flex items-center mb-2">
-                          <Clock className="mr-2 h-4 w-4 opacity-50" />
-                          <div className="text-sm">
-                            {field.value ? field.value : "Selecione um horário"}
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {availableTimeSlots.length > 0 ? (
-                            availableTimeSlots.map((time) => (
-                              <Button
-                                type="button"
-                                key={time}
-                                variant={field.value === time ? "default" : "outline"}
-                                className="h-9"
-                                onClick={() => field.onChange(time)}
-                              >
-                                {time}
-                              </Button>
-                            ))
-                          ) : (
-                            <div className="text-sm text-gray-500">
-                              {selectedDate ? "Nenhum horário disponível nesta data" : "Selecione uma data primeiro"}
-                            </div>
-                          )}
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Pet */}
-                  <FormField
-                    control={form.control}
-                    name="pet_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Pet</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione um pet" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {pets.length > 0 ? (
-                              pets.map((pet) => (
-                                <SelectItem key={pet.id} value={pet.id}>
-                                  {pet.name}
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <SelectItem value="none" disabled>
-                                Nenhum pet cadastrado
-                              </SelectItem>
-                            )}
-                          </SelectContent>
-                        </Select>
-                        {pets.length === 0 && (
-                          <div className="mt-2">
-                            <Button 
-                              type="button" 
-                              variant="link" 
-                              className="p-0"
-                              onClick={() => navigate("/cliente/perfil")}
-                            >
-                              Cadastrar um pet
-                            </Button>
-                          </div>
-                        )}
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Observações */}
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Observações (opcional)</FormLabel>
-                        <FormControl>
-                          <textarea
-                            className={cn(
-                              "flex min-h-20 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                            )}
-                            placeholder="Adicione informações relevantes para o atendimento..."
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-                <CardFooter>
-                  <Button 
-                    type="submit" 
-                    disabled={saving || pets.length === 0}
-                  >
-                    {saving ? "Agendando..." : "Confirmar Agendamento"}
-                  </Button>
-                </CardFooter>
-              </form>
-            </Form>
-          </Card>
-        </div>
-
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Detalhes do Serviço</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <h3 className="font-medium">{service.name}</h3>
-                {service.description && (
-                  <p className="text-sm text-gray-500 mt-1">{service.description}</p>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={(date) => handleDateSelect(date)}
+                          disabled={(date) => {
+                            // Disable dates that aren't in the available dates list
+                            return !availableDates.some(
+                              availableDate =>
+                                availableDate.getDate() === date.getDate() &&
+                                availableDate.getMonth() === date.getMonth() &&
+                                availableDate.getFullYear() === date.getFullYear()
+                            );
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Preço:</span>
-                <Badge variant="outline" className="font-semibold">
-                  {new Intl.NumberFormat('pt-BR', { 
-                    style: 'currency', 
-                    currency: 'BRL' 
-                  }).format(service.price)}
-                </Badge>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Duração:</span>
-                <span>{service.duration} minutos</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+              />
+              
+              {selectedDate && availableSlots.length > 0 && (
+                <FormField
+                  control={form.control}
+                  name="time_slot"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Horário</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um horário" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {availableSlots.map((slot) => (
+                            <SelectItem key={slot.id} value={slot.start_time}>
+                              {formatTime(slot.start_time)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              
+              {selectedDate && availableSlots.length === 0 && (
+                <div className="py-4 text-center">
+                  <p className="text-amber-600">Não há horários disponíveis para esta data</p>
+                </div>
+              )}
+              
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observações (opcional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Adicione informações relevantes para este agendamento"
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <Button type="submit" className="w-full" disabled={submitting}>
+                {submitting ? "Agendando..." : "Confirmar Agendamento"}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </ClienteLayout>
   );
 };

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,8 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserType } from "@/hooks/use-user-type";
+import { useAuth } from "@/contexts/AuthContext";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido").min(1, "Email é obrigatório"),
@@ -22,6 +24,8 @@ type LoginFormData = z.infer<typeof loginSchema>;
 const ClienteLogin = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const { userType, updateUserType, loading: typeLoading } = useUserType();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -30,6 +34,13 @@ const ClienteLogin = () => {
       password: ""
     }
   });
+
+  useEffect(() => {
+    // If already logged in and is cliente, redirect to client panel
+    if (user && !typeLoading && userType === 'cliente') {
+      navigate('/painel-cliente');
+    }
+  }, [user, userType, typeLoading, navigate]);
 
   const handleLogin = async (data: LoginFormData) => {
     if (loading) return;
@@ -45,8 +56,16 @@ const ClienteLogin = () => {
 
       if (error) throw error;
 
-      toast.success("Login realizado com sucesso!");
-      navigate("/cliente/dashboard");
+      if (authData.user) {
+        // Set user type to cliente if not already set
+        const result = await updateUserType('cliente');
+        if (!result) {
+          console.warn("Failed to update user type to cliente");
+        }
+        
+        toast.success("Login realizado com sucesso!");
+        navigate("/painel-cliente");
+      }
     } catch (error: any) {
       console.error("Erro no login:", error);
       toast.error(error.message || "Erro ao fazer login");
@@ -54,6 +73,15 @@ const ClienteLogin = () => {
       setLoading(false);
     }
   };
+
+  // Don't show login if user is already logged in as cliente
+  if (user && !typeLoading && userType === 'cliente') {
+    return (
+      <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
+        <p className="text-gray-600">Redirecionando...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50 items-center justify-center p-4">
