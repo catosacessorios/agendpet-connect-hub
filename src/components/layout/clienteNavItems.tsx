@@ -3,7 +3,7 @@ import { Home, Calendar, Settings, Book } from "lucide-react";
 import { ReactNode } from "react";
 
 // Definindo o tipo correto para os itens de navegação
-type NavItem = {
+export type NavItem = {
   label: string;
   href: string;
   icon: ReactNode;

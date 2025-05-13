@@ -42,6 +42,7 @@ type Service = {
   description: string | null;
   price: number;
   duration: number;
+  petshop_id: string; // Add the petshop_id field to the service type
 };
 
 type TimeSlot = {
@@ -209,11 +210,12 @@ const ClienteAgendar = () => {
         end_time: endTime,
         status: "pending",
         notes: data.notes || null,
+        petshop_id: service.petshop_id, // Add the petshop_id from the service
       };
       
       const { error } = await supabase
         .from("appointments")
-        .insert([appointmentData]);
+        .insert(appointmentData); // Pass the single object, not an array
         
       if (error) throw error;
       

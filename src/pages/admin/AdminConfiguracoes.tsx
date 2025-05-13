@@ -48,13 +48,15 @@ const AdminConfiguracoes = () => {
         
       if (error) throw error;
       
-      setFormData({
-        name: data.name || "",
-        email: data.email || "",
-        phone: data.phone || "",
-        address: data.address || "",
-        description: data.description || ""
-      });
+      if (data) {
+        setFormData({
+          name: data.name || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          address: data.address || "",
+          description: data.description || ""
+        });
+      }
     } catch (error) {
       console.error("Error fetching petshop data:", error);
       toast.error("Erro ao carregar dados do pet shop");

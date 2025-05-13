@@ -103,11 +103,12 @@ const ClientePerfil = () => {
     try {
       setSaving(true);
       
+      // Ensure that age is properly converted to a number or null
       const petData = {
         name: data.name,
         species: data.species,
         breed: data.breed || null,
-        age: data.age !== undefined ? Number(data.age) : null
+        age: data.age !== undefined && data.age !== "" ? Number(data.age) : null
       };
       
       const success = await addPet(petData);

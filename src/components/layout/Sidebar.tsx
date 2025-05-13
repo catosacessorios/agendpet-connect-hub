@@ -15,6 +15,7 @@ type SidebarProps = {
   handleLogout: () => void;
   setMenuOpen?: (open: boolean) => void;
   isMobile?: boolean;
+  userName?: string; // Added userName as an optional prop
 };
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -22,7 +23,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   petshopProfile, 
   handleLogout, 
   setMenuOpen,
-  isMobile 
+  isMobile,
+  userName 
 }) => {
   const closeMenu = () => {
     if (isMobile && setMenuOpen) {
@@ -39,6 +41,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="text-sm text-gray-600 text-center">
           {petshopProfile?.name}
         </div>
+        {userName && (
+          <div className="mt-2 text-sm font-medium">
+            Olá, {userName}
+          </div>
+        )}
       </div>
       
       <nav className="flex-1">

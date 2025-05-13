@@ -51,20 +51,20 @@ export const useCliente = () => {
 
       if (clienteError) throw clienteError;
       
-      // Convert the data to ensure it has the correct shape
-      const clienteWithUserId: Cliente = {
-        id: clienteData.id,
-        name: clienteData.name,
-        email: clienteData.email,
-        phone: clienteData.phone,
-        user_id: user!.id,
-        created_at: clienteData.created_at
-      };
-      
-      setCliente(clienteWithUserId);
-
-      // Buscar pets do cliente
       if (clienteData) {
+        // Ensure the clienteData has the required user_id property
+        const clienteWithCorrectShape: Cliente = {
+          id: clienteData.id,
+          name: clienteData.name,
+          email: clienteData.email,
+          phone: clienteData.phone,
+          user_id: user!.id,
+          created_at: clienteData.created_at
+        };
+        
+        setCliente(clienteWithCorrectShape);
+
+        // Buscar pets do cliente
         const { data: petsData, error: petsError } = await supabase
           .from("pets")
           .select("*")
@@ -101,8 +101,10 @@ export const useCliente = () => {
 
       if (error) throw error;
 
-      setPets([...pets, data[0]]);
-      toast.success("Pet adicionado com sucesso!");
+      if (data && data.length > 0) {
+        setPets([...pets, data[0]]);
+        toast.success("Pet adicionado com sucesso!");
+      }
       return true;
     } catch (error: any) {
       console.error("Erro ao adicionar pet:", error);
