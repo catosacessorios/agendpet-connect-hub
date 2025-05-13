@@ -46,7 +46,7 @@ export const useCliente = () => {
       const { data: clienteData, error: clienteError } = await supabase
         .from("clients")
         .select("*")
-        .eq("user_id", user!.id)
+        .eq("user_id", user?.id)
         .single();
 
       if (clienteError) throw clienteError;

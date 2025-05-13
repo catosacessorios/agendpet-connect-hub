@@ -153,19 +153,12 @@ const PainelAdministrador = () => {
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Agendamentos Recentes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <RecentAppointments 
-                appointments={recentAppointments}
-                formatDate={formatDate}
-                formatTime={formatTime}
-                formatCurrency={formatCurrency}
-              />
-            </CardContent>
-          </Card>
+          <RecentAppointments 
+            appointments={recentAppointments}
+            formatDate={formatDate}
+            formatTime={formatTime}
+            formatCurrency={formatCurrency}
+          />
         </div>
         <div>
           <Card>
