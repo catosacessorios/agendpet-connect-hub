@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// Definindo explicitamente o tipo Cliente
 export type Cliente = {
   id: string;
   name: string;
@@ -11,6 +12,8 @@ export type Cliente = {
   phone: string;
   user_id: string;
   created_at: string;
+  petshop_id: string | null;
+  updated_at: string;
 };
 
 export type Pet = {
@@ -20,6 +23,10 @@ export type Pet = {
   breed: string | null;
   age: number | null;
   client_id: string;
+  weight: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export const useCliente = () => {
@@ -42,7 +49,7 @@ export const useCliente = () => {
     try {
       setLoading(true);
       
-      // Buscar dados do cliente
+      // Buscar dados do cliente - usando tipo explícito para evitar inferência profunda
       const { data: clienteData, error: clienteError } = await supabase
         .from("clients")
         .select("*")
@@ -52,18 +59,12 @@ export const useCliente = () => {
       if (clienteError) throw clienteError;
       
       if (clienteData) {
-        const clienteObj: Cliente = {
-          id: clienteData.id,
-          name: clienteData.name,
-          email: clienteData.email,
-          phone: clienteData.phone,
-          user_id: user!.id,
-          created_at: clienteData.created_at
-        };
+        // Converta explicitamente para o tipo Cliente
+        const clienteObj: Cliente = clienteData as Cliente;
         
         setCliente(clienteObj);
 
-        // Buscar pets do cliente
+        // Buscar pets do cliente - usando tipo explícito
         const { data: petsData, error: petsError } = await supabase
           .from("pets")
           .select("*")
@@ -71,7 +72,8 @@ export const useCliente = () => {
 
         if (petsError) throw petsError;
         
-        setPets(petsData || []);
+        // Converta explicitamente para um array de Pet
+        setPets(petsData as Pet[] || []);
       }
     } catch (error: any) {
       console.error("Erro ao buscar dados do cliente:", error);
