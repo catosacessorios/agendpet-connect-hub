@@ -27,10 +27,11 @@ type Service = {
   description: string | null;
   price: number;
   duration: number;
-  petshop_id: string; // Add the petshop_id field to the service type
+  petshop_id: string;
 };
 
 type TimeSlot = {
+  id: string;
   day_of_week: number;
   start_time: string;
   end_time: string;
@@ -39,7 +40,7 @@ type TimeSlot = {
 type Pet = {
   id: string;
   name: string;
-  species: string; // Add the species field to the pet type
+  species: string;
 };
 
 // Esquema de validação

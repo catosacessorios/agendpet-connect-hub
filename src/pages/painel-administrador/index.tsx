@@ -12,6 +12,17 @@ import { toast } from "sonner";
 import StatsCard from "@/components/dashboard/StatsCard";
 import QuickActions from "@/components/dashboard/QuickActions";
 import RecentAppointments from "@/components/dashboard/RecentAppointments";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+type Appointment = {
+  id: string;
+  appointment_date: string;
+  start_time: string;
+  status: string;
+  clients: { name: string } | null;
+  services: { name: string; price: number } | null;
+};
 
 const PainelAdministrador = () => {
   const { user } = useAuth();
@@ -24,6 +35,7 @@ const PainelAdministrador = () => {
     pendingAppointments: 0
   });
   const [loading, setLoading] = useState(true);
+  const [recentAppointments, setRecentAppointments] = useState<Appointment[]>([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -44,11 +56,19 @@ const PainelAdministrador = () => {
           const petshopId = petshopData.id;
           
           // Get stats
-          const [clientsResult, appointmentsResult, servicesResult, pendingAppointmentsResult] = await Promise.all([
+          const [clientsResult, appointmentsResult, servicesResult, pendingAppointmentsResult, recentAppointmentsResult] = await Promise.all([
             supabase.from("clients").select("id", { count: 'exact', head: true }).eq("petshop_id", petshopId),
             supabase.from("appointments").select("id", { count: 'exact', head: true }).eq("petshop_id", petshopId),
             supabase.from("services").select("id", { count: 'exact', head: true }).eq("petshop_id", petshopId),
-            supabase.from("appointments").select("id", { count: 'exact', head: true }).eq("petshop_id", petshopId).eq("status", "pending")
+            supabase.from("appointments").select("id", { count: 'exact', head: true }).eq("petshop_id", petshopId).eq("status", "pending"),
+            supabase.from("appointments").select(`
+              id, 
+              appointment_date, 
+              start_time, 
+              status,
+              clients (name),
+              services (name, price)
+            `).eq("petshop_id", petshopId).order('appointment_date', { ascending: false }).limit(5)
           ]);
           
           setStats({
@@ -57,6 +77,10 @@ const PainelAdministrador = () => {
             totalServices: servicesResult.count || 0,
             pendingAppointments: pendingAppointmentsResult.count || 0
           });
+          
+          if (recentAppointmentsResult.data) {
+            setRecentAppointments(recentAppointmentsResult.data as unknown as Appointment[]);
+          }
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -68,6 +92,19 @@ const PainelAdministrador = () => {
     
     fetchDashboardData();
   }, [user]);
+
+  // Helper functions for formatting data
+  const formatDate = (dateString: string) => {
+    return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
+  };
+
+  const formatTime = (timeString: string) => {
+    return timeString.substring(0, 5);
+  };
+
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
 
   // Redirect if not admin type
   useEffect(() => {
@@ -91,25 +128,25 @@ const PainelAdministrador = () => {
         <StatsCard 
           title="Total de Clientes" 
           value={stats.totalClients} 
-          icon={<Users className="h-6 w-6 text-blue-600" />}
+          icon={Users} 
           description="Clientes cadastrados"
         />
         <StatsCard 
           title="Total de Agendamentos" 
           value={stats.totalAppointments} 
-          icon={<CalendarDays className="h-6 w-6 text-purple-600" />}
+          icon={CalendarDays} 
           description="Agendamentos realizados"
         />
         <StatsCard 
           title="Serviços Disponíveis" 
           value={stats.totalServices} 
-          icon={<Scissors className="h-6 w-6 text-green-600" />}
+          icon={Scissors} 
           description="Serviços oferecidos"
         />
         <StatsCard 
           title="Agendamentos Pendentes" 
           value={stats.pendingAppointments} 
-          icon={<Clock className="h-6 w-6 text-amber-600" />} 
+          icon={Clock} 
           description="Aguardando atendimento"
         />
       </div>
@@ -121,7 +158,12 @@ const PainelAdministrador = () => {
               <CardTitle>Agendamentos Recentes</CardTitle>
             </CardHeader>
             <CardContent>
-              <RecentAppointments />
+              <RecentAppointments 
+                appointments={recentAppointments}
+                formatDate={formatDate}
+                formatTime={formatTime}
+                formatCurrency={formatCurrency}
+              />
             </CardContent>
           </Card>
         </div>

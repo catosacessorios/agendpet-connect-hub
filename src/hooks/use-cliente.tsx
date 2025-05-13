@@ -52,14 +52,16 @@ export const useCliente = () => {
       if (clienteError) throw clienteError;
       
       if (clienteData) {
-        setCliente({
+        const clienteObj: Cliente = {
           id: clienteData.id,
           name: clienteData.name,
           email: clienteData.email,
           phone: clienteData.phone,
           user_id: user!.id,
           created_at: clienteData.created_at
-        });
+        };
+        
+        setCliente(clienteObj);
 
         // Buscar pets do cliente
         const { data: petsData, error: petsError } = await supabase
