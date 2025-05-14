@@ -29,7 +29,12 @@ const petSchema = z.object({
   age: z.union([
     z.number().positive("Idade deve ser maior que zero").optional(),
     z.string().transform(val => val === "" ? undefined : Number(val))
-  ]).optional()
+  ]).optional(),
+  weight: z.union([
+    z.number().optional(),
+    z.string().transform(val => val === "" ? undefined : Number(val))
+  ]).optional(),
+  notes: z.string().optional()
 });
 type PetFormData = z.infer<typeof petSchema>;
 
@@ -60,7 +65,9 @@ const ClientePerfil = () => {
       name: "",
       species: "",
       breed: "",
-      age: undefined
+      age: undefined,
+      weight: undefined,
+      notes: ""
     }
   });
 
@@ -79,12 +86,14 @@ const ClientePerfil = () => {
     try {
       setSaving(true);
       
-      // Ensure that age is properly converted to a number or null
+      // Ensure that age and weight are properly converted to numbers or null
       const petData = {
         name: data.name,
         species: data.species,
         breed: data.breed || null,
-        age: data.age !== undefined ? Number(data.age) : null
+        age: data.age !== undefined ? Number(data.age) : null,
+        weight: data.weight !== undefined ? Number(data.weight) : null,
+        notes: data.notes || null
       };
       
       const success = await addPet(petData);
@@ -251,6 +260,47 @@ const ClientePerfil = () => {
                             value={field.value === undefined ? '' : field.value}
                             onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                             placeholder="Idade do pet" 
+                            disabled={saving} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={petForm.control}
+                    name="weight"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Peso em kg (opcional)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            {...field}
+                            value={field.value === undefined ? '' : field.value}
+                            onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                            placeholder="Peso do pet" 
+                            disabled={saving} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={petForm.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Observações (opcional)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field}
+                            placeholder="Observações sobre o pet" 
                             disabled={saving} 
                           />
                         </FormControl>

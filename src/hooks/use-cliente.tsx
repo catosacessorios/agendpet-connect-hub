@@ -83,7 +83,7 @@ export const useCliente = () => {
     }
   };
 
-  const addPet = async (petData: Omit<Pet, "id" | "client_id">) => {
+  const addPet = async (petData: Omit<Pet, "id" | "client_id" | "created_at" | "updated_at">) => {
     if (!cliente) {
       toast.error("Você precisa estar logado para adicionar um pet");
       return false;
