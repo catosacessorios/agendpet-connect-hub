@@ -48,28 +48,29 @@ export const useCliente = () => {
     try {
       setLoading(true);
       
-      // Fix: Uso de tipagem explícita com type assertion para evitar inferência profunda
+      // Utilizando tipagem explícita para corrigir o erro TS2589
       const { data, error } = await supabase
         .from('clients')
         .select('*')
         .eq('user_id', user?.id)
         .single();
       
-      const clienteData = data as Cliente | null;
-      const clienteError = error;
+      // Converter explicitamente para os tipos definidos
+      const clientData = data as Cliente | null;
+      const clientError = error;
 
-      if (clienteError) {
-        if (clienteError.code === 'PGRST116') {
+      if (clientError) {
+        if (clientError.code === 'PGRST116') {
           console.log('Cliente não encontrado para este usuário');
         } else {
-          console.error('Erro ao buscar cliente:', clienteError);
+          console.error('Erro ao buscar cliente:', clientError);
           toast.error('Erro ao carregar dados do cliente');
         }
         setCliente(null);
         setPets([]);
-      } else if (clienteData) {
-        setCliente(clienteData);
-        await fetchPets(clienteData.id);
+      } else if (clientData) {
+        setCliente(clientData);
+        await fetchPets(clientData.id);
       }
     } catch (error) {
       console.error('Erro ao buscar cliente:', error);
@@ -81,7 +82,7 @@ export const useCliente = () => {
 
   const fetchPets = async (clienteId: string) => {
     try {
-      // Fix: Uso de tipagem explícita com type assertion para evitar inferência profunda
+      // Utilizando tipagem explícita para corrigir o erro TS2589
       const { data, error } = await supabase
         .from('pets')
         .select('*')
@@ -91,7 +92,7 @@ export const useCliente = () => {
         throw error;
       }
 
-      // Convertendo para o tipo Pet[] definido
+      // Convertendo explicitamente para o tipo Pet[]
       setPets(data as Pet[] || []);
     } catch (error) {
       console.error('Erro ao buscar pets:', error);
