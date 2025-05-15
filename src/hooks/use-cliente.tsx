@@ -48,27 +48,25 @@ export const useCliente = () => {
     try {
       setLoading(true);
       
-      // Utilizando tipagem explícita para corrigir o erro TS2589
+      // Utilizando tipagem correta para evitar o erro de instantiação excessiva
       const { data, error } = await supabase
         .from('clients')
         .select('*')
         .eq('user_id', user?.id)
         .single();
       
-      // Converter explicitamente para os tipos definidos
-      const clientData = data as Cliente | null;
-      const clientError = error;
-
-      if (clientError) {
-        if (clientError.code === 'PGRST116') {
+      if (error) {
+        if (error.code === 'PGRST116') {
           console.log('Cliente não encontrado para este usuário');
         } else {
-          console.error('Erro ao buscar cliente:', clientError);
+          console.error('Erro ao buscar cliente:', error);
           toast.error('Erro ao carregar dados do cliente');
         }
         setCliente(null);
         setPets([]);
-      } else if (clientData) {
+      } else if (data) {
+        // Convertendo explicitamente para o tipo Cliente
+        const clientData = data as unknown as Cliente;
         setCliente(clientData);
         await fetchPets(clientData.id);
       }
@@ -82,7 +80,6 @@ export const useCliente = () => {
 
   const fetchPets = async (clienteId: string) => {
     try {
-      // Utilizando tipagem explícita para corrigir o erro TS2589
       const { data, error } = await supabase
         .from('pets')
         .select('*')
@@ -92,8 +89,9 @@ export const useCliente = () => {
         throw error;
       }
 
-      // Convertendo explicitamente para o tipo Pet[]
-      setPets(data as Pet[] || []);
+      // Convertendo dados para o tipo Pet[] de forma segura
+      const petData = data as unknown as Pet[];
+      setPets(petData || []);
     } catch (error) {
       console.error('Erro ao buscar pets:', error);
       toast.error('Erro ao carregar dados dos pets');
