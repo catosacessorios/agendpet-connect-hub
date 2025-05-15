@@ -48,12 +48,15 @@ export const useCliente = () => {
     try {
       setLoading(true);
       
-      // Uso explícito de tipo para evitar inferência muito profunda
-      const { data: clienteData, error: clienteError } = await supabase
+      // Fix: Uso de tipagem explícita com type assertion para evitar inferência profunda
+      const { data, error } = await supabase
         .from('clients')
         .select('*')
         .eq('user_id', user?.id)
-        .single() as { data: Cliente | null, error: any };
+        .single();
+      
+      const clienteData = data as Cliente | null;
+      const clienteError = error;
 
       if (clienteError) {
         if (clienteError.code === 'PGRST116') {
@@ -65,7 +68,7 @@ export const useCliente = () => {
         setCliente(null);
         setPets([]);
       } else if (clienteData) {
-        setCliente(clienteData as Cliente);
+        setCliente(clienteData);
         await fetchPets(clienteData.id);
       }
     } catch (error) {
@@ -78,11 +81,11 @@ export const useCliente = () => {
 
   const fetchPets = async (clienteId: string) => {
     try {
-      // Uso explícito de tipo para evitar inferência muito profunda
+      // Fix: Uso de tipagem explícita com type assertion para evitar inferência profunda
       const { data, error } = await supabase
         .from('pets')
         .select('*')
-        .eq('client_id', clienteId) as { data: Pet[] | null, error: any };
+        .eq('client_id', clienteId);
 
       if (error) {
         throw error;
