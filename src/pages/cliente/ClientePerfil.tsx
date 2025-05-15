@@ -39,7 +39,7 @@ const petSchema = z.object({
 type PetFormData = z.infer<typeof petSchema>;
 
 const ClientePerfil = () => {
-  const { cliente, loading, updateClienteProfile, addPet, pets } = useCliente();
+  const { cliente, loading, updateCliente, addPet, pets } = useCliente();
   const [activeTab, setActiveTab] = useState("perfil");
   const [saving, setSaving] = useState(false);
 
@@ -76,7 +76,7 @@ const ClientePerfil = () => {
     
     try {
       setSaving(true);
-      await updateClienteProfile(data);
+      await updateCliente(data);
     } finally {
       setSaving(false);
     }
