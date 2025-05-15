@@ -53,7 +53,7 @@ export const useCliente = () => {
         .from('clients')
         .select('*')
         .eq('user_id', user?.id)
-        .single();
+        .single() as { data: Cliente | null, error: any };
 
       if (clienteError) {
         if (clienteError.code === 'PGRST116') {
@@ -65,10 +65,8 @@ export const useCliente = () => {
         setCliente(null);
         setPets([]);
       } else if (clienteData) {
-        // Convertendo para o tipo Cliente definido
-        const clienteFormatado: Cliente = clienteData as Cliente;
-        setCliente(clienteFormatado);
-        await fetchPets(clienteFormatado.id);
+        setCliente(clienteData as Cliente);
+        await fetchPets(clienteData.id);
       }
     } catch (error) {
       console.error('Erro ao buscar cliente:', error);
@@ -84,14 +82,14 @@ export const useCliente = () => {
       const { data, error } = await supabase
         .from('pets')
         .select('*')
-        .eq('client_id', clienteId);
+        .eq('client_id', clienteId) as { data: Pet[] | null, error: any };
 
       if (error) {
         throw error;
       }
 
       // Convertendo para o tipo Pet[] definido
-      setPets(data as Pet[]);
+      setPets(data as Pet[] || []);
     } catch (error) {
       console.error('Erro ao buscar pets:', error);
       toast.error('Erro ao carregar dados dos pets');
