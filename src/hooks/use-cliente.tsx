@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-// Definir interfaces para evitar o erro de tipagem "excessively deep"
+// Interfaces
 export interface Cliente {
   id: string;
   name: string;
@@ -48,7 +48,7 @@ export const useCliente = () => {
     try {
       setLoading(true);
       
-      // Utilizando tipagem correta para evitar o erro de instantiação excessiva
+      // Usando a sintaxe genérica correta do Supabase v2
       const { data, error } = await supabase
         .from('clients')
         .select('*')
@@ -65,7 +65,7 @@ export const useCliente = () => {
         setCliente(null);
         setPets([]);
       } else if (data) {
-        // Convertendo explicitamente para o tipo Cliente
+        // Usando type assertion com unknown como intermediário para evitar o erro TS2589
         const clientData = data as unknown as Cliente;
         setCliente(clientData);
         await fetchPets(clientData.id);
@@ -89,7 +89,7 @@ export const useCliente = () => {
         throw error;
       }
 
-      // Convertendo dados para o tipo Pet[] de forma segura
+      // Usando type assertion com unknown como intermediário
       const petData = data as unknown as Pet[];
       setPets(petData || []);
     } catch (error) {
