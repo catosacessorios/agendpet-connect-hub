@@ -23,7 +23,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 const Login = () => {
   const navigate = useNavigate();
   const { user, signIn, loading: authLoading } = useAuth();
-  const { userType, loading: typeLoading } = useUserType();
+  const { userType, loading: typeLoading, updateUserType } = useUserType();
   const [loading, setLoading] = useState(false);
 
   const form = useForm<LoginFormData>({
@@ -38,16 +38,21 @@ const Login = () => {
     // Handle routing based on user type
     if (user && !authLoading && !typeLoading) {
       if (userType === 'admin') {
-        navigate('/painel-administrador');
+        navigate('/admin');
       } else if (userType === 'cliente') {
-        navigate('/painel-cliente');
+        navigate('/cliente');
       } else if (userType === null) {
-        // Type not set yet, redirect based on user role
+        // Tipo de usuário não definido ainda, verificar email para atribuição temporária
         if (user.email === 'admin@example.com') {
-          // This is a temporary check, replace with more robust role assignment
-          navigate('/dashboard');
+          // Definir como admin temporariamente
+          updateUserType('admin').then(() => {
+            navigate('/admin');
+          });
         } else {
-          navigate('/cliente/dashboard');
+          // Definir como cliente por padrão
+          updateUserType('cliente').then(() => {
+            navigate('/cliente');
+          });
         }
       }
     }
@@ -61,7 +66,7 @@ const Login = () => {
 
     try {
       await signIn(data.email, data.password);
-      // Navigation handled in useEffect based on user type
+      // Navegação tratada no useEffect baseada no tipo de usuário
     } catch (error: any) {
       console.error("Error in handleLogin:", error);
       toast.error(error.message || "Erro ao fazer login");
@@ -144,6 +149,15 @@ const Login = () => {
                     </FormItem>
                   )}
                 />
+
+                <div className="flex justify-between items-center">
+                  <Link to="/cliente/login" className="text-sm text-primary hover:underline">
+                    Login como cliente
+                  </Link>
+                  <Link to="/login" className="text-sm text-primary hover:underline">
+                    Login como petshop
+                  </Link>
+                </div>
               </CardContent>
 
               <CardFooter className="flex flex-col">

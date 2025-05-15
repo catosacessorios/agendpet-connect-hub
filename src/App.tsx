@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { AdminProvider } from "./contexts/AdminContext";
 import ProtectedRouteWrapper from "./components/ProtectedRouteWrapper";
+import ProtectedAdminRoute from "./components/admin/ProtectedAdminRoute";
+import ProtectedClienteRoute from "./components/cliente/ProtectedClienteRoute";
 
 // Public pages
 import Index from "./pages/Index";
@@ -23,15 +25,6 @@ import Servicos from "./pages/dashboard/Servicos";
 import Horarios from "./pages/dashboard/Horarios";
 import Clientes from "./pages/dashboard/Clientes";
 import Configuracoes from "./pages/dashboard/Configuracoes";
-import AdminDashboard from "./pages/admin/Admin";
-import AdminServicos from "./pages/admin/AdminServicos";
-import AdminHorarios from "./pages/admin/AdminHorarios";
-import AdminPrecos from "./pages/admin/AdminPrecos";
-import AdminClientes from "./pages/admin/AdminClientes";
-import AdminAgendamentos from "./pages/admin/AdminAgendamentos";
-import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
-
-// New admin panel
 import PainelAdministrador from "./pages/painel-administrador";
 
 // Cliente pages
@@ -42,8 +35,6 @@ import ClienteServicos from "./pages/cliente/ClienteServicos";
 import ClienteAgendar from "./pages/cliente/ClienteAgendar";
 import ClienteAgendamentos from "./pages/cliente/ClienteAgendamentos";
 import ClientePerfil from "./pages/cliente/ClientePerfil";
-
-// New client panel
 import PainelCliente from "./pages/painel-cliente";
 
 const queryClient = new QueryClient();
@@ -65,48 +56,35 @@ const App = () => (
               <Route path="/recursos" element={<Recursos />} />
               
               {/* Admin routes - require login and admin role */}
-              <Route 
-                path="/painel-administrador" 
-                element={
-                  <ProtectedRouteWrapper requiredUserType="admin">
-                    <PainelAdministrador />
-                  </ProtectedRouteWrapper>
-                } 
-              />
+              <Route path="/admin" element={<ProtectedAdminRoute><PainelAdministrador /></ProtectedAdminRoute>} />
+              <Route path="/admin/servicos" element={<ProtectedAdminRoute><Servicos /></ProtectedAdminRoute>} />
+              <Route path="/admin/horarios" element={<ProtectedAdminRoute><Horarios /></ProtectedAdminRoute>} />
+              <Route path="/admin/precos" element={<ProtectedAdminRoute><Servicos /></ProtectedAdminRoute>} />
+              <Route path="/admin/clientes" element={<ProtectedAdminRoute><Clientes /></ProtectedAdminRoute>} />
+              <Route path="/admin/agendamentos" element={<ProtectedAdminRoute><Agendamentos /></ProtectedAdminRoute>} />
+              <Route path="/admin/configuracoes" element={<ProtectedAdminRoute><Configuracoes /></ProtectedAdminRoute>} />
               
-              {/* Client routes - require login and client role */}
-              <Route 
-                path="/painel-cliente" 
-                element={
-                  <ProtectedRouteWrapper requiredUserType="cliente">
-                    <PainelCliente />
-                  </ProtectedRouteWrapper>
-                } 
-              />
-              
-              {/* Legacy routes */}
-              <Route path="/dashboard" element={<ProtectedRouteWrapper><Dashboard /></ProtectedRouteWrapper>} />
-              <Route path="/dashboard/agendamentos" element={<ProtectedRouteWrapper><Agendamentos /></ProtectedRouteWrapper>} />
-              <Route path="/dashboard/servicos" element={<ProtectedRouteWrapper><Servicos /></ProtectedRouteWrapper>} />
-              <Route path="/dashboard/horarios" element={<ProtectedRouteWrapper><Horarios /></ProtectedRouteWrapper>} />
-              <Route path="/dashboard/clientes" element={<ProtectedRouteWrapper><Clientes /></ProtectedRouteWrapper>} />
-              <Route path="/dashboard/configuracoes" element={<ProtectedRouteWrapper><Configuracoes /></ProtectedRouteWrapper>} />
-              
-              <Route path="/admin" element={<ProtectedRouteWrapper><AdminDashboard /></ProtectedRouteWrapper>} />
-              <Route path="/admin/servicos" element={<ProtectedRouteWrapper><AdminServicos /></ProtectedRouteWrapper>} />
-              <Route path="/admin/horarios" element={<ProtectedRouteWrapper><AdminHorarios /></ProtectedRouteWrapper>} />
-              <Route path="/admin/precos" element={<ProtectedRouteWrapper><AdminPrecos /></ProtectedRouteWrapper>} />
-              <Route path="/admin/clientes" element={<ProtectedRouteWrapper><AdminClientes /></ProtectedRouteWrapper>} />
-              <Route path="/admin/agendamentos" element={<ProtectedRouteWrapper><AdminAgendamentos /></ProtectedRouteWrapper>} />
-              <Route path="/admin/configuracoes" element={<ProtectedRouteWrapper><AdminConfiguracoes /></ProtectedRouteWrapper>} />
-              
+              {/* Cliente routes - require login and cliente role */}
               <Route path="/cliente/login" element={<ClienteLogin />} />
               <Route path="/cliente/cadastro" element={<ClienteCadastro />} />
-              <Route path="/cliente/dashboard" element={<ProtectedRouteWrapper><ClienteDashboard /></ProtectedRouteWrapper>} />
-              <Route path="/cliente/servicos" element={<ProtectedRouteWrapper><ClienteServicos /></ProtectedRouteWrapper>} />
-              <Route path="/cliente/agendar/:serviceId" element={<ProtectedRouteWrapper><ClienteAgendar /></ProtectedRouteWrapper>} />
-              <Route path="/cliente/agendamentos" element={<ProtectedRouteWrapper><ClienteAgendamentos /></ProtectedRouteWrapper>} />
-              <Route path="/cliente/perfil" element={<ProtectedRouteWrapper><ClientePerfil /></ProtectedRouteWrapper>} />
+              <Route path="/cliente" element={<ProtectedClienteRoute><PainelCliente /></ProtectedClienteRoute>} />
+              <Route path="/cliente/dashboard" element={<ProtectedClienteRoute><ClienteDashboard /></ProtectedClienteRoute>} />
+              <Route path="/cliente/servicos" element={<ProtectedClienteRoute><ClienteServicos /></ProtectedClienteRoute>} />
+              <Route path="/cliente/agendar/:serviceId" element={<ProtectedClienteRoute><ClienteAgendar /></ProtectedClienteRoute>} />
+              <Route path="/cliente/agendamentos" element={<ProtectedClienteRoute><ClienteAgendamentos /></ProtectedClienteRoute>} />
+              <Route path="/cliente/perfil" element={<ProtectedClienteRoute><ClientePerfil /></ProtectedClienteRoute>} />
+              
+              {/* Legacy routes - will be deprecated */}
+              <Route path="/dashboard" element={<Navigate to="/admin" replace />} />
+              <Route path="/dashboard/agendamentos" element={<Navigate to="/admin/agendamentos" replace />} />
+              <Route path="/dashboard/servicos" element={<Navigate to="/admin/servicos" replace />} />
+              <Route path="/dashboard/horarios" element={<Navigate to="/admin/horarios" replace />} />
+              <Route path="/dashboard/clientes" element={<Navigate to="/admin/clientes" replace />} />
+              <Route path="/dashboard/configuracoes" element={<Navigate to="/admin/configuracoes" replace />} />
+              
+              {/* Painel routes - redirect to appropriate dashboard */}
+              <Route path="/painel-administrador" element={<Navigate to="/admin" replace />} />
+              <Route path="/painel-cliente" element={<Navigate to="/cliente" replace />} />
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />

@@ -4,30 +4,29 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-// Definindo explicitamente o tipo Cliente
-export type Cliente = {
+// Definir interfaces para evitar o erro de tipagem "excessively deep"
+export interface Cliente {
   id: string;
   name: string;
   email: string | null;
   phone: string;
-  user_id: string;
-  created_at: string;
   petshop_id: string | null;
+  created_at: string;
   updated_at: string;
-};
+}
 
-export type Pet = {
+export interface Pet {
   id: string;
   name: string;
   species: string;
   breed: string | null;
   age: number | null;
-  client_id: string;
   weight: number | null;
   notes: string | null;
+  client_id: string;
   created_at: string;
   updated_at: string;
-};
+}
 
 export const useCliente = () => {
   const { user } = useAuth();
@@ -37,49 +36,65 @@ export const useCliente = () => {
 
   useEffect(() => {
     if (user) {
-      fetchClienteData();
+      fetchCliente();
     } else {
+      setLoading(false);
       setCliente(null);
       setPets([]);
-      setLoading(false);
     }
   }, [user]);
 
-  const fetchClienteData = async () => {
+  const fetchCliente = async () => {
     try {
       setLoading(true);
       
-      // Buscar dados do cliente - usando tipo explícito para evitar inferência profunda
+      // Uso explícito de tipo para evitar inferência muito profunda
       const { data: clienteData, error: clienteError } = await supabase
-        .from("clients")
-        .select("*")
-        .eq("user_id", user?.id)
+        .from('clients')
+        .select('*')
+        .eq('user_id', user?.id)
         .single();
 
-      if (clienteError) throw clienteError;
-      
-      if (clienteData) {
-        // Converta explicitamente para o tipo Cliente
-        const clienteObj: Cliente = clienteData as Cliente;
-        
-        setCliente(clienteObj);
-
-        // Buscar pets do cliente - usando tipo explícito
-        const { data: petsData, error: petsError } = await supabase
-          .from("pets")
-          .select("*")
-          .eq("client_id", clienteData.id);
-
-        if (petsError) throw petsError;
-        
-        // Converta explicitamente para um array de Pet
-        setPets(petsData as Pet[] || []);
+      if (clienteError) {
+        if (clienteError.code === 'PGRST116') {
+          console.log('Cliente não encontrado para este usuário');
+        } else {
+          console.error('Erro ao buscar cliente:', clienteError);
+          toast.error('Erro ao carregar dados do cliente');
+        }
+        setCliente(null);
+        setPets([]);
+      } else if (clienteData) {
+        // Convertendo para o tipo Cliente definido
+        const clienteFormatado: Cliente = clienteData as Cliente;
+        setCliente(clienteFormatado);
+        await fetchPets(clienteFormatado.id);
       }
-    } catch (error: any) {
-      console.error("Erro ao buscar dados do cliente:", error);
-      toast.error("Erro ao carregar dados do perfil");
+    } catch (error) {
+      console.error('Erro ao buscar cliente:', error);
+      toast.error('Erro ao carregar dados do cliente');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPets = async (clienteId: string) => {
+    try {
+      // Uso explícito de tipo para evitar inferência muito profunda
+      const { data, error } = await supabase
+        .from('pets')
+        .select('*')
+        .eq('client_id', clienteId);
+
+      if (error) {
+        throw error;
+      }
+
+      // Convertendo para o tipo Pet[] definido
+      setPets(data as Pet[]);
+    } catch (error) {
+      console.error('Erro ao buscar pets:', error);
+      toast.error('Erro ao carregar dados dos pets');
     }
   };
 
@@ -90,31 +105,30 @@ export const useCliente = () => {
     }
 
     try {
-      const { data, error } = await supabase
-        .from("pets")
+      const { error } = await supabase
+        .from('pets')
         .insert([
           {
-            ...petData,
-            client_id: cliente.id
+            client_id: cliente.id,
+            ...petData
           }
-        ])
-        .select();
+        ]);
 
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        setPets([...pets, data[0]]);
-        toast.success("Pet adicionado com sucesso!");
+      if (error) {
+        throw error;
       }
+
+      toast.success("Pet adicionado com sucesso!");
+      await fetchPets(cliente.id);
       return true;
-    } catch (error: any) {
+    } catch (error) {
       console.error("Erro ao adicionar pet:", error);
-      toast.error(error.message || "Erro ao adicionar pet");
+      toast.error("Erro ao adicionar pet");
       return false;
     }
   };
 
-  const updateClienteProfile = async (profileData: Partial<Cliente>) => {
+  const updateCliente = async (clienteData: Partial<Cliente>) => {
     if (!cliente) {
       toast.error("Você precisa estar logado para atualizar o perfil");
       return false;
@@ -122,22 +136,20 @@ export const useCliente = () => {
 
     try {
       const { error } = await supabase
-        .from("clients")
-        .update(profileData)
-        .eq("id", cliente.id);
+        .from('clients')
+        .update(clienteData)
+        .eq('id', cliente.id);
 
-      if (error) throw error;
-
-      setCliente({
-        ...cliente,
-        ...profileData
-      });
+      if (error) {
+        throw error;
+      }
 
       toast.success("Perfil atualizado com sucesso!");
+      await fetchCliente();
       return true;
-    } catch (error: any) {
+    } catch (error) {
       console.error("Erro ao atualizar perfil:", error);
-      toast.error(error.message || "Erro ao atualizar perfil");
+      toast.error("Erro ao atualizar perfil");
       return false;
     }
   };
@@ -147,7 +159,7 @@ export const useCliente = () => {
     pets,
     loading,
     addPet,
-    updateClienteProfile,
-    refreshData: fetchClienteData
+    updateCliente,
+    reloadCliente: fetchCliente
   };
 };
